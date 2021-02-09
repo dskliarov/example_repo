@@ -1,0 +1,55 @@
+version: '2.1'
+services:
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+  etcd:
+    image: 'bitnami/etcd:latest'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - 2379:2379
+      - 2380:2380
+
+  service:
+    build:
+      context: ../../.
+      dockerfile: ./ops/docker/server.Dockerfile
+      args:
+        - 'SSH_PRIVATE_KEY=${GITLAB_SSH_PRIVATE_KEY}'
+        - 'SSH_PUBLIC_KEY=${GITLAB_SSH_PUBLIC_KEY}'
+    ports:
+      - "5672:5672"
+
+  riak_coordinator:
+    image: basho/riak-kv
+    ports:
+      - "8087:8087"
+      - "8098:8098"
+    environment:
+      - CLUSTER_NAME=riakkv
+    labels:
+      - "com.basho.riak.cluster.name=riakkv"
+    volumes:
+      - schemas:/etc/riak/schemas
+  riak_member:
+    image: basho/riak-kv
+    ports:
+      - "8087"
+      - "8098"
+    labels:
+      - "com.basho.riak.cluster.name=riakkv"
+    links:
+      - riak_coordinator
+    depends_on:
+      - riak_coordinator
+    environment:
+      - CLUSTER_NAME=riakkv
+      - COORDINATOR_NODE=riak_coordinator
+
+volumes:
+  schemas:
+    external: false

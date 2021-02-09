@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "svc-meta-saga.fullname" . }}
+  labels:
+    {{- include "svc-meta-saga.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 9000 
+      protocol: TCP
+      name: tcp
+  selector:
+    {{- include "svc-meta-saga.selectorLabels" . | nindent 4 }}

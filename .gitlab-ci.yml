@@ -1,0 +1,177 @@
+# vi: ft=yaml
+stages:
+  - test
+  - build
+  - ns-control
+  - deploy
+
+variables:
+  KUBECONFIG: /etc/deploy/config
+  SERVICENAME: svc-meta-saga
+  TIMEOUT: "30s"
+
+test:
+  stage: test
+  script:
+    - apt-get -yq update && apt-get -yqq install ssh
+    - mkdir -p -m 0600 /root/.ssh
+    - ssh-keyscan gitlab.aeon.world >> /root/.ssh/known_hosts
+    - echo -e "$PRIVATE_KEY" > /root/.ssh/id_rsa && echo -e "$PUBLIC_KEY" > /root/.ssh/id_rsa.pub
+    - chmod 600 /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa.pub
+    - chmod +x ./test/codeTest.sh && ./test/codeTest.sh $CI_PROJECT_PATH
+  only:
+    - merge_requests
+  tags:
+    - elixir
+  cache:
+    key:  ${CI_COMMIT_REF_SLUG}
+    paths:
+      - priv/plts
+
+buildImage:
+  stage: build
+  image: docker:stable
+  tags:
+    - backend
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker builder prune -af
+    - >
+      docker build -t $CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+      -f=./ops/docker/server.Dockerfile --build-arg SSH_PRIVATE_KEY="$PRIVATE_KEY"
+      --build-arg SSH_PUBLIC_KEY="$PUBLIC_KEY" .
+    - docker push $CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  allow_failure: false
+
+createDynamicEnv:
+  stage: ns-control
+  variables:
+    GIT_STRATEGY: none
+  image: gitlab.aeon.world:5020/tools/deploy:latest 
+  tags:
+    - backend
+  script:
+    - mkdir /etc/deploy
+    - echo $KUBECFG | base64 -d > ${KUBECONFIG}
+    - kubectl create namespace $CI_COMMIT_REF_NAME
+    - kubectl label namespace $CI_COMMIT_REF_NAME istio-injection=enabled
+    - helm -n $CI_COMMIT_REF_NAME repo add bitnami https://charts.bitnami.com/bitnami
+    - helm -n $CI_COMMIT_REF_NAME repo add hashicorp https://helm.releases.hashicorp.com
+    - helm -n $CI_COMMIT_REF_NAME repo add aeoncorp https://cdn.aeon.world/charts
+    - helm -n $CI_COMMIT_REF_NAME repo update
+    - helm install aeon-rabbitmq bitnami/rabbitmq -n $CI_COMMIT_REF_NAME --set auth.username=$RABBIT_USER,auth.password=$RABBIT_PWD
+    - helm install aeon-redis bitnami/redis -n $CI_COMMIT_REF_NAME --set password=$REDIS_PWD --set cluster.enabled=false
+    - helm install aeon-db -n $CI_COMMIT_REF_NAME --set postgresqlPassword=$PGSQL_PWD bitnami/postgresql
+    - kubectl get secret regcred --namespace=aeon-services --export -o yaml | kubectl apply --namespace=$CI_COMMIT_REF_NAME -f -
+    - helm install -n $CI_COMMIT_REF_NAME aeon-riak aeoncorp/aeon-riak
+    - helm install -n $CI_COMMIT_REF_NAME aeon-etcd bitnami/etcd --set statefulset.replicaCount=1
+    - sleep ${TIMEOUT}
+  when: manual
+  except:
+    - dev
+    - staging
+    - master
+    - default
+    - aeon-services
+    - aeon-test
+    - aeon-prod
+
+deleteDynamicEnv:
+  stage: ns-control
+  variables:
+    GIT_STRATEGY: none
+  image: gitlab.aeon.world:5020/tools/deploy:latest 
+  tags:
+    - backend
+  script:
+    - mkdir /etc/deploy
+    - echo $KUBECFG | base64 -d > ${KUBECONFIG}
+    - kubectl delete all --all -n $CI_COMMIT_REF_NAME
+    - kubectl delete namespace $CI_COMMIT_REF_NAME
+  when: manual
+  except:
+    - dev
+    - staging
+    - master
+    - default
+    - aeon-services
+    - aeon-test
+    - aeon-prod
+
+deployDev:
+  stage: deploy
+  image: gitlab.aeon.world:5020/tools/deploy:latest 
+  tags:
+    - backend
+  environment: production
+  script:
+    - mkdir /etc/deploy
+    - echo $KUBECFG | base64 -d > ${KUBECONFIG}
+    - >
+      helm upgrade --install ${SERVICENAME} 
+      --namespace aeon-services --values ./ops/helmchart/values.yaml ./ops/helmchart/
+      --set image.repository=$CI_REGISTRY/$CI_PROJECT_PATH
+      --set image.tag=$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  when: manual
+  only:
+    - dev
+
+autoDeployDev:
+  stage: deploy
+  image: gitlab.aeon.world:5020/tools/deploy:latest 
+  tags:
+    - backend
+  environment: production
+  script:
+    - mkdir /etc/deploy
+    - echo $KUBECFG | base64 -d > ${KUBECONFIG}
+    - >
+      helm upgrade --install ${SERVICENAME}
+      --namespace aeon-services --values ./ops/helmchart/values.yaml ./ops/helmchart/
+      --set image.repository=$CI_REGISTRY/$CI_PROJECT_PATH
+      --set image.tag=$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  only:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /autodeploy/
+
+deployStaging:
+  stage: deploy
+  image: gitlab.aeon.world:5020/tools/deploy:latest 
+  tags:
+    - backend
+  environment: production
+  script:
+    - mkdir /etc/deploy
+    - echo $KUBECFG | base64 -d > ${KUBECONFIG}
+    - >
+      helm upgrade --install ${SERVICENAME}
+      --namespace aeon-staging --values ./ops/helmchart/values.yaml ./ops/helmchart/
+      --set image.repository=$CI_REGISTRY/$CI_PROJECT_PATH
+      --set image.tag=$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  when: manual
+  only:
+    - staging
+
+deployOnDynamicEnv:
+  stage: deploy
+  image: gitlab.aeon.world:5020/tools/deploy:latest 
+  tags:
+    - backend
+  environment: production
+  script:
+    - mkdir /etc/deploy
+    - echo $KUBECFG | base64 -d > ${KUBECONFIG}
+    - >
+      helm upgrade --install  ${SERVICENAME}
+      --namespace $CI_COMMIT_REF_NAME --values ./ops/helmchart/values.yaml ./ops/helmchart/
+      --set image.repository=$CI_REGISTRY/$CI_PROJECT_PATH
+      --set image.tag=$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  when: manual
+  except:
+    - dev
+    - staging
+    - master
+    - default
+    - aeon-services
+    - aeon-test
+    - aeon-prod

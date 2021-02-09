@@ -1,0 +1,14 @@
+{
+    "title": "Get saga state",
+    "type": "object",
+    "description": "Command: get saga state",
+    "required": [
+        "id"
+    ],
+    "properties": {
+        "id": {
+            "type":  "string",
+            "description": "saga id"
+        }
+    }
+}
