@@ -18,7 +18,8 @@
          rpc_call/7,
          format/2,
          find_ring_node/2,
-         ring_nodes/1
+         ring_nodes/1,
+         erl_elixir_dir/0
         ]).
 
 -export([
@@ -99,7 +100,7 @@ env_var_name(Prefix, PortOrHost) ->
     format("~s_~s", [Prefix, PortOrHost]).
 
 service_env_var_prefix(ServiceName) ->
-    format("SVC_META_~s_SERVICE_~s", [ServiceName]).
+    format("SVC_META_~s_SERVICE", [ServiceName]).
 
 %%--------------------------------------------------------------------
 %%  Reomote application
@@ -227,11 +228,11 @@ project_root_directory() ->
 erl_app_dir(LibDirectory, Application) ->
     format("-pa ~s/~s/ebin/", [LibDirectory, Application]).
 
-erl_elixir_dir(Dir) ->
-    FilePath = code:which('Elixir.Kernel'),
+erl_elixir_dir(Dir1) ->
+    FilePath = os:cmd("elixir -e ':code.which(Elixir.Kernel)|> IO.write()'"),
     Dir = filename:dirname(FilePath),
     [ElixirInstallDir|_] = string:split(Dir, "bin"),
-    format("-pa ~s~s~s", [ElixirInstallDir, "lib", Dir]).
+    format("-pa ~s", [filename:join([ElixirInstallDir, "lib", Dir1])]).
 
 erl_elixir_dir() ->
     ElixirDir = erl_elixir_dir(?ELIXIR_BIN_DIR),
