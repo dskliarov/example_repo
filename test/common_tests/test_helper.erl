@@ -301,7 +301,7 @@ rpc_call(Node, Module, Function, Arguments, OperationDescription, ProcessPrint) 
     log_rpc_call_result(OperationDescription, Node1, Result, ProcessPrint).
 
 start_app_remote(Application, Node) ->
-    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [<<"config/test.exs">>],
+    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [get_config_path("config", "test")],
                   "application ~p read config", [Application], false),
     log("Read config result ~p",[Config]),
     Config1 = rpc_call(Node, ?ELIXIR_APP, put_all_env, [Config],
@@ -314,11 +314,6 @@ start_app_remote(Node, [], Results) ->
     log("Applications start on Node ~p with result ~p",
         [Node, Results]),
     ok;
-start_app_remote(Node, [Application = elixir | Applications], Results) ->
-    Result = rpc_call(Node, application, ensure_all_started, [Application],
-        "application start ~p", [Application], false),
-    ok = load_exixir_config(Node, get_config_path()),
-    start_app_remote(Node, Applications, [{Application, Result} | Results]);
 start_app_remote(Node, [Application | Applications], Results) ->
     Result = rpc_call(Node, application, ensure_all_started, [Application],
                       "application start ~p", [Application], false),
@@ -435,15 +430,5 @@ format(FormatString, Data) ->
 ct_run() ->
     ct:run("test/common_tests/", saga_SUITE).
 
-load_exixir_config(Node, PathToFile) ->
-    Config = rpc_call(Node, 'Elixir.Config.Reader', 'read!', [PathToFile],
-        "read config elixir node ~p", [Node], false),
-    log("Config loaded ~p",[Config]),
-    Result = rpc_call(Node, 'Elixir.Application', 'put_all_env', [Config],
-        "put env elixir node ~p", [Node], false),
-    log("Result put env ~p",[Result]),
-    Result.
-
-get_config_path() ->
-    Env = os:getenv("MIX_ENV", "test"),
-    list_to_binary(filename:join(["config", Env ++ ".exs"])).
+get_config_path(Dir, Name) ->
+    list_to_binary(filename:join([Dir, Name ++ ".exs"])).
