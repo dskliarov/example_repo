@@ -99,7 +99,7 @@ env_var_name(Prefix, PortOrHost) ->
     format("~s_~s", [Prefix, PortOrHost]).
 
 service_env_var_prefix(ServiceName) ->
-    format("SVC_META_~s_SERVICE_~s", [ServiceName]).
+    format("SVC_META_~s_SERVICE", [ServiceName]).
 
 %%--------------------------------------------------------------------
 %%  Reomote application

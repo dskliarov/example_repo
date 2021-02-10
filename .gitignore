@@ -25,3 +25,45 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 meta_saga-*.tar
 
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+# Ignore package tarball (built via "mix hex.build").
+distributed_lock-*.tar
+
+# Elixir
+/_build
+/cover
+/deps
+/doc
+/.fetch
+erl_crash.dump
+*.ez
+*.beam
+/test/common_tests/*.beam
+
+/config/*.secret.exs
+.elixir_ls/
+
+# Erlang
+.eunit
+*.o
+*.beam
+*.plt
+erl_crash.dump
+.concrete/DEV_MODE
+
+# rebar 3
+.rebar3
+_build/
+_checkouts/
+
+*.html
+*.css
+*.js
+ct_*
+*.crashdump
+variables-*
