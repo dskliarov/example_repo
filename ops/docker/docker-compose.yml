@@ -21,8 +21,6 @@ services:
       args:
         - 'SSH_PRIVATE_KEY=${GITLAB_SSH_PRIVATE_KEY}'
         - 'SSH_PUBLIC_KEY=${GITLAB_SSH_PUBLIC_KEY}'
-    ports:
-      - "5672:5672"
 
   riak_coordinator:
     image: basho/riak-kv

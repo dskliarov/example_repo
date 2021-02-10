@@ -46,6 +46,8 @@
 -define(SCHEDULER, 'Elixir.DistributedLib.Cron.Scheduler').
 -define(DISTRIBUTED_LIB, 'Elixir.DistributedLib').
 -define(DEFAULT_MAP, {0, sets:new()}).
+-define(ELIXIR_CONFIG, 'Elixir.Config.Reader').
+-define(ELIXIR_APP, 'Elixir.Application').
 %%--------------------------------------------------------------------
 %%  etcd
 %%--------------------------------------------------------------------
@@ -143,6 +145,7 @@ stop_app1(Node) when is_atom(Node)->
 %%--------------------------------------------------------------------
 %%  Private functions
 %%--------------------------------------------------------------------
+
 node_name(Node) ->
     case persistent_term:get(Node, nil) of
         nil ->
@@ -213,11 +216,6 @@ compose_file() ->
 compose_file(ProjectName) ->
     Prefix = format("deps/~s", [ProjectName]),
     path(Prefix, ?COMPOSE_FILE).
-
-project_directory() ->
-    FilePath = code:which(?MODULE),
-    [ProjectDirectory|_] = string:split(FilePath, "saga2"),
-    format("~ssaga2", [ProjectDirectory]).
 
 project_root_directory() ->
     FilePath = code:which(?MODULE),
@@ -303,6 +301,12 @@ rpc_call(Node, Module, Function, Arguments, OperationDescription, ProcessPrint) 
     log_rpc_call_result(OperationDescription, Node1, Result, ProcessPrint).
 
 start_app_remote(Application, Node) ->
+    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [<<"config/test.exs">>],
+                  "application ~p read config", [Application], false),
+    log("Read config result ~p",[Config]),
+    Config1 = rpc_call(Node, ?ELIXIR_APP, put_all_env, [Config],
+                   "application ~p load env", [Application], false),
+    log("Load environment result ~p",[Config1]),
     Applications = applications_to_start(Application),
     start_app_remote(Node, Applications, []).
 
@@ -330,7 +334,7 @@ start_client_node(Node, Acc) ->
 
 start_node(Application, Node, Acc) ->
     Node1 = start_app(Application, Node),
-    wait_for_node(Node1),
+    wait_for_node(Node1, Application),
     wait_for_ready(Node1),
     {ok, NodeId} = node_id(Node1),
     Acc1 = maps:put(Node, NodeId, Acc),
@@ -353,9 +357,9 @@ node_id(Node) ->
 timestamp(TimeSpanSeconds) ->
     os:system_time(millisecond) + TimeSpanSeconds.
 
-wait_for_node_delayed(Node) ->
+wait_for_node_delayed(Node, Application) ->
     timer:sleep(2000),
-    wait_for_node(Node).
+    wait_for_node(Node, Application).
 
 wait_for_ready_delayed(Node, Counter) ->
     timer:sleep(2000),
@@ -376,31 +380,31 @@ wait_for_ready(Node, Counter) ->
             wait_for_ready_delayed(Node, Counter)
     end.
 
-wait_for_node(Node) ->
+wait_for_node(Application, Node) ->
     Nodes = nodes(),
     case lists:member(Node, Nodes) of
         true ->
-            is_application_started(distributed_lib, Node);
+            is_application_started(Application, Node);
         false ->
-            wait_for_node_delayed(Node)
+            wait_for_node_delayed(Node, Application)
     end.
 
 is_application_started(Application, Node) ->
     case rpc_call(Node, application, which_applications, []) of
         {badrpc, nodedown} ->
-            wait_for_node_delayed(Node);
+            wait_for_node_delayed(Node, Application);
         Applications ->
             StartedDistributedLib = lists:any(
                                        fun(AppTuple) ->
                                                is_app_started(AppTuple, Application)
                                        end, Applications),
-            wait_for_node(StartedDistributedLib, Applications)
+            check_node_status(StartedDistributedLib, Applications, Application)
     end.
 
-wait_for_node(true, _Node) ->
+check_node_status(true, _Node, _Application) ->
     ok;
-wait_for_node(_NotStarted, Node) ->
-    wait_for_node_delayed(Node).
+check_node_status(_NotStarted, Node, Application) ->
+    wait_for_node_delayed(Node, Application).
 
 is_app_started({Application, _Description, _Version}, Application) ->
     true;
