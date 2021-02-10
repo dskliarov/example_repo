@@ -18,8 +18,7 @@
          rpc_call/7,
          format/2,
          find_ring_node/2,
-         ring_nodes/1,
-         erl_elixir_dir/0
+         ring_nodes/1
         ]).
 
 -export([
@@ -301,7 +300,7 @@ rpc_call(Node, Module, Function, Arguments, OperationDescription, ProcessPrint) 
     log_rpc_call_result(OperationDescription, Node1, Result, ProcessPrint).
 
 start_app_remote(Application, Node) ->
-    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [get_config_path("config", "test")],
+    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [get_config_path("config", atom_to_list(Application))],
                   "application ~p read config", [Application], false),
     log("Read config result ~p",[Config]),
     Config1 = rpc_call(Node, ?ELIXIR_APP, put_all_env, [Config],

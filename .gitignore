@@ -67,3 +67,6 @@ _checkouts/
 ct_*
 *.crashdump
 variables-*
+
+#Idea files
+*.iml
