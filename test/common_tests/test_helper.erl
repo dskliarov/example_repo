@@ -54,13 +54,13 @@ start_deps() ->
     start_service("rabbitmq etcd riak_coordinator riak_member").
 
 start_core() ->
-    start_service("meta_core", "service").
+    start_service("core", "service").
 
 stop_deps() ->
     stop_services().
 
 stop_core() ->
-    stop_services("meta_core").
+    stop_services("core").
 
 start_service(Service) ->
     Command = up_command(Service),
