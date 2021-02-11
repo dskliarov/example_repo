@@ -71,6 +71,10 @@ defmodule Meta.Saga.Test.Saga do
     }
   end
 
+  defp payload(:process, id, event) do
+    payload(:process, id, event, nil)
+  end
+
   defp payload(:process, id, event, nil) do
     %{
       "id" => id,

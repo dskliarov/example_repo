@@ -152,6 +152,6 @@ defmodule Meta.Saga.Test.WorkflowOne do
   defp next_step(@step4), do: @last_step
 
   defp update_state(state, %{"id" => id, "current_step" => step}, metadata),
-    do: %{state|"saga_id" => id, "current_id" => step, "metadata" => metadata}
+    do: %{state|"saga_id" => id, "current_step" => step, "metadata" => metadata}
 
 end
