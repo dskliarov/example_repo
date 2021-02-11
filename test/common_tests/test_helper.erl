@@ -125,6 +125,7 @@ start_app(Application, Node) when is_atom(Node) ->
     log("Starting node ~s~n", [Node1]),
     Options = app_options(),
     StartResult = ct_slave:start(Node1, Options),
+    log("NODES ~p",[net_adm:names()]),
     log("Node ~p start result: ~p~n", [Node1, StartResult]),
     Node2 = node_from_result(StartResult),
     start_app_remote(Application, Node2),
@@ -281,7 +282,7 @@ log_rpc_call_result(OperationDescription, Node, Result, _) ->
     Result.
 
 rpc_call(Node, Module, Function) ->
-    rpc_call(Node, Module, Function).
+    rpc_call(Node, Module, Function, []).
 
 rpc_call(Node, Module, Function, Arguments) ->
     Node1 = node_name(Node),
@@ -436,9 +437,9 @@ get_config_path(Dir1, Name) ->
     Dir = filename:dirname(FilePath),
     RootDir = 
     case  lists:reverse(filename:split(Dir)) of
-        ["test", "extras" | _] -> %% is ct runs
+        ["test", "extras" | _] -> %% This is ct running
             filename:join([Dir, "common_tests", Dir1]);
-        _ -> %% is runs from erl shell 
+        _ -> %% This is running from erl shell 
             Dir1
     end,
     list_to_binary(filename:join([RootDir, Name ++ ".exs"])).
