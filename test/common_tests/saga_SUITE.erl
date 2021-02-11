@@ -6,7 +6,7 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--define(WORKFLOW, "Elixir.Meta.Saga.Test.WorkflowOne").
+-define(WORKFLOW, 'Elixir.Meta.Saga.Test.WorkflowOne').
 %%--------------------------------------------------------------------
 %%  COMMON TEST CALLBACK FUNCTIONS
 %%
