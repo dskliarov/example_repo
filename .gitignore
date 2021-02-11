@@ -70,3 +70,4 @@ variables-*
 
 #Idea files
 *.iml
+.idea

@@ -300,7 +300,9 @@ rpc_call(Node, Module, Function, Arguments, OperationDescription, ProcessPrint) 
     log_rpc_call_result(OperationDescription, Node1, Result, ProcessPrint).
 
 start_app_remote(Application, Node) ->
-    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [get_config_path("config", atom_to_list(Application))],
+    PathToConfig  = get_config_path("config", atom_to_list(Application)),
+    log("Path to config file ~p",[PathToConfig]),
+    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [PathToConfig],
                   "application ~p read config", [Application], false),
     log("Read config result ~p",[Config]),
     Config1 = rpc_call(Node, ?ELIXIR_APP, put_all_env, [Config],
@@ -429,5 +431,14 @@ format(FormatString, Data) ->
 ct_run() ->
     ct:run("test/common_tests/", saga_SUITE).
 
-get_config_path(Dir, Name) ->
-    list_to_binary(filename:join([Dir, Name ++ ".exs"])).
+get_config_path(Dir1, Name) ->
+    FilePath = code:which(?MODULE),
+    Dir = filename:dirname(FilePath),
+    RootDir = 
+    case  lists:reverse(filename:split(Dir)) of
+        ["test", "extras" | _] -> %% is ct runs
+            filename:join([Dir, "common_tests", Dir1]);
+        _ -> %% is runs from erl shell 
+            Dir1
+    end,
+    list_to_binary(filename:join([RootDir, Name ++ ".exs"])).
