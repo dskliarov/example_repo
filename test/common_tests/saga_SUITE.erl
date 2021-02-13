@@ -23,7 +23,7 @@ init_per_suite(_Config) ->
     test_helper:start_core(),
     test_helper:load_env_variables(),
     Nodes = [dev1],
-    SagaNode = saga,
+    SagaNode = saga_client,
     SortedNodes = lists:sort(Nodes),
     [
      {nodes, SortedNodes},
