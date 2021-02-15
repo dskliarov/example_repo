@@ -2,7 +2,7 @@ defmodule Meta.Saga.Client.Core do
 
   alias Wizard.Client
 
-  @core "svc.meta.core"
+  @core "svc.meta.core."
   @entity_type "saga"
 
   #########################################################
@@ -11,8 +11,8 @@ defmodule Meta.Saga.Client.Core do
   #
   #########################################################
 
-  def write({id, state,  owner}, metadata) do
-    {id, state, owner, metadata}
+  def write(id, data, metadata) do
+    {id, data, metadata}
     |> write_args()
     |> Client.exec()
   end
@@ -44,10 +44,10 @@ defmodule Meta.Saga.Client.Core do
     ]
   end
 
-  defp write_args({id, state, owner, metadata}) do
+  defp write_args({id, data, metadata}) do
     [
       to: uri("write"),
-      payload: write_payload(id, state, owner),
+      payload: write_payload(id, data),
       metadata: metadata
     ]
   end
@@ -64,16 +64,11 @@ defmodule Meta.Saga.Client.Core do
     }
   end
 
-  defp write_payload(id, state, owner) do
+  defp write_payload(id, data) do
     %{
           "entity_id" => id,
           "entity_type" => @entity_type,
-          "payload" => %{
-            "state" => state,
-            "owner" => owner,
-            "process" => "",
-            "events_queue" => :queue.new()
-          }
+          "payload" => data
     }
   end
 

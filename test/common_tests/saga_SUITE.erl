@@ -53,7 +53,7 @@ init_per_test_case(TestCase, Config) ->
     ?MODULE:TestCase({prelude, Config}).
 
 end_per_test_case(TestCase, Config) ->
-    ?MODULE:TestCase({poslude, Config}).
+    ?MODULE:TestCase({postlude, Config}).
 
 %%--------------------------------------------------------------------
 %%  Group

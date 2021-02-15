@@ -34,6 +34,11 @@
         ]).
 
 -export([
+         prelude/0,
+         postlude/0
+        ]).
+
+-export([
          ct_run/0
         ]).
 
@@ -278,7 +283,7 @@ applications_to_start(Application) when is_atom(Application) ->
 log_rpc_call_result(_OperationDescription, _Node, Result, false) ->
     Result;
 log_rpc_call_result(OperationDescription, Node, Result, _) ->
-    log("The result of ~s on node ~p is ~p", [OperationDescription, Node, Result]),
+    log("The result of ~s on node ~p is ~p~n~n", [OperationDescription, Node, Result]),
     Result.
 
 rpc_call(Node, Module, Function) ->
@@ -329,15 +334,15 @@ start_nodes([Node|Nodes], Acc) ->
     start_nodes(Nodes, Acc1).
 
 start_node(Node, Acc) ->
-    start_node(saga2, Node, Acc).
+    start_node(saga2, Node, Acc, true).
 
 start_client_node(Node, Acc) ->
-    start_node(test_saga, Node, Acc).
+    start_node(test_saga, Node, Acc, false).
 
-start_node(Application, Node, Acc) ->
+start_node(Application, Node, Acc, EnableDistributedLib) ->
     Node1 = start_app(Application, Node),
     wait_for_node(Node1, Application),
-    wait_for_ready(Node1),
+    exec_ready_wait(Node, EnableDistributedLib),
     {ok, NodeId} = node_id(Node1),
     Acc1 = maps:put(Node, NodeId, Acc),
     Acc2 = maps:put(NodeId, Node, Acc1),
@@ -366,6 +371,12 @@ wait_for_node_delayed(Node, Application) ->
 wait_for_ready_delayed(Node, Counter) ->
     timer:sleep(2000),
     wait_for_ready(Node, Counter - 1).
+
+exec_ready_wait(Node, true) ->
+    wait_for_ready(Node);
+exec_ready_wait(Node, _) ->
+    ok.
+
 
 wait_for_ready(Node) ->
     wait_for_ready(Node, 10).
@@ -436,3 +447,21 @@ get_config_path(Name) ->
     RootDir = project_root_directory(),
     ConfigDir = "config",
     list_to_binary(filename:join([RootDir, "test", "common_tests",  ConfigDir, Name ++ ".exs"])).
+
+prelude() ->
+    prelude([dev1], saga_client).
+
+prelude(Nodes, SagaNode) ->
+    prelude(Nodes, SagaNode, #{}).
+
+prelude(Nodes, SagaNode, Acc) ->
+    load_env_variables(),
+    start_core(),
+    start_deps(),
+    Acc1 = start_nodes(Nodes, Acc),
+    start_client_node(SagaNode, Acc1).
+
+postlude() ->
+    stop_core(),
+    stop_deps(),
+    stop_app_on_nodes().

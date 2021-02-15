@@ -2,8 +2,10 @@ defmodule Meta.Saga.Test.Saga do
 
   alias Wizard.Client
 
-  @owner "svc.meta.test_saga"
-  @saga "svc.meta.saga2.abc"
+  @owner "svc.meta.test_saga.response"
+  @saga "svc.meta.saga2"
+  @idle ".idle"
+  @process ".process"
   @idle_timeout 3_000
   @process_timeout 2_000
   @retry_counter 3
@@ -17,14 +19,7 @@ defmodule Meta.Saga.Test.Saga do
   def idle(id, saga, metadata) do
     :idle
     |> payload(id, saga)
-    |> args(metadata)
-    |> Client.exec()
-  end
-
-  def process(id, event, metadata) do
-    :process
-    |> payload(id, event)
-    |> exec(metadata)
+    |> exec(@idle, metadata)
   end
 
   def process(id, event, metadata) do
@@ -34,7 +29,7 @@ defmodule Meta.Saga.Test.Saga do
   def process(id, event, data, metadata) do
     :process
     |> payload(id, event, data)
-    |> exec(metadata)
+    |> exec(@process, metadata)
   end
 
   def idle_timeout, do: @idle_timeout
@@ -47,15 +42,15 @@ defmodule Meta.Saga.Test.Saga do
   #
   #########################################################
 
-  defp exec(payload, metadata) do
+  defp exec(payload, action, metadata) do
     payload
-    |> args(metadata)
+    |> args(action, metadata)
     |> Client.exec()
   end
 
-  defp args(payload, metadata) do
+  defp args(payload, action, metadata) do
     [
-      to: "rpc://" <> @saga,
+      to: "rpc://" <> @saga <> action,
       payload: payload,
       metadata: metadata
     ]
@@ -65,9 +60,7 @@ defmodule Meta.Saga.Test.Saga do
     %{
       "id" => id,
       "owner" => @owner,
-      "state" => %{
-        "state" => Map.merge(saga, options())
-      }
+      "state" => Map.merge(saga, options())
     }
   end
 

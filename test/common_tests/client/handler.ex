@@ -4,7 +4,7 @@ defmodule Meta.Saga.Test.Client.Handler do
 
   require Logger
 
-  @saga "svc.meta.test_saga"
+  @saga "svc.meta.test_saga."
 
   #########################################################
   #

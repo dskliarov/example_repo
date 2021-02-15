@@ -1,8 +1,8 @@
 defmodule Meta.Saga.Processor do
 
+  alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.Cron
   alias Meta.Saga.Client.{Core, Processor}
-  alias DistributedLib.Processor.MessageHandler
 
   @behaviour MessageHandler
 
@@ -17,28 +17,23 @@ defmodule Meta.Saga.Processor do
   #
   #########################################################
 
-  def handle_event(payload, event, metadata \\ [])
-  def handle_event(payload, :idle, metadata) do
-    %{"id" => id,
-      "state" => state,
-      "owner" => owner} = payload
-    DistributedLib.process(id, {state, :idle, owner, metadata}, __MODULE__)
+  def handle_event(data, event, metadata \\ [])
+  def handle_event(%{"id" => id} = data, :idle, metadata) do
+    saga = payload(data)
+    DistributedLib.process(id, {saga, :idle, metadata}, __MODULE__)
   end
 
   def handle_event(id, event, metadata) do
-    with {:ok, {state, owner}} <- get_saga(id),
-      do: DistributedLib.process(id, {state, event, owner, metadata}, __MODULE__)
+    with {:ok, saga} <- get_saga(id),
+      do: DistributedLib.process(id, {saga, event, metadata}, __MODULE__)
   end
 
   def stop(id, metadata),
     do: handle_event(id, :stop, metadata)
 
   def get_saga(id, metadata \\ []) do
-    with {:ok, {_id,
-                %{"state" => state,
-                  "owner" => owner}}
-         } <- CoreClient.read(id, metadata) do
-      {:ok, {state, owner}}
+    with {:ok, {_id, saga}} <- CoreClient.read(id, metadata) do
+      {:ok, saga}
       else
         {:ok, []} ->
           {:error, :not_found}
@@ -48,20 +43,20 @@ defmodule Meta.Saga.Processor do
   end
 
   @impl MessageHandler
-  def handle(id, {state, event, owner, metadata}, _opts) do
+  def handle(id, {%{"owner" => owner} = state, event, metadata}, _opts) do
     case dispatch_event(state, event) do
-      {:error, state} ->
-        Processor.execute({id, state, :error, owner}, metadata)
+      {:error, state1} ->
+        Processor.execute({id, state1, :error, owner}, metadata)
       {:execute_process, {state1, current_event, process_timeout}} ->
         Processor.execute({id, state1, current_event, owner}, metadata)
         Cron.add_execute_timeout(id, process_timeout)
-      {:idle, state, idle_timeout} ->
-        Core.write({id, state, owner}, metadata)
+      {:idle, state1, idle_timeout} ->
+        Core.write(id, state1, metadata)
         Cron.add_idle_timeout(id, idle_timeout)
       {:queue, state1} ->
-        Core.write({id, state1, owner}, metadata)
+        Core.write(id, state1, metadata)
       {:stop, state1} ->
-        Core.write({id, state1, owner}, metadata)
+        Core.write(id, state1, metadata)
       {:ignore, _state} ->
         :ok
     end
@@ -123,4 +118,12 @@ defmodule Meta.Saga.Processor do
     {:queue, state}
   end
 
+  defp payload(%{"state" => state, "owner" => owner}) do
+    %{
+      "state" => state,
+      "owner" => owner,
+      "process" => "",
+      "events_queue" => :queue.new()
+    }
+  end
 end

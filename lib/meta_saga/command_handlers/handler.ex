@@ -4,7 +4,7 @@ defmodule Meta.Saga.CommandHandlers.Handler do
 
   require Logger
 
-  @saga "svc.meta.saga"
+  @saga "svc.meta.saga2."
 
   #########################################################
   #

@@ -18,18 +18,18 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #########################################################
 
   def start_link(),
-    do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
+    do: GenServer.start_link(__MODULE__, [], name: name())
 
   def stop(),
-    do: GenServer.stop(__MODULE__)
+    do: GenServer.stop(name())
 
   def expected_history(),
     do: [@initialize, @step1, @step2, @step3, @step4, @last_step]
 
-  def exec_saga(), do: GenServer.call(__MODULE__, :exec_saga)
+  def exec_saga(), do: GenServer.call(name(), :exec_saga)
 
   def process(event, saga, metadata) do
-    GenServer.cast(__MODULE__, {:process, event, saga, metadata})
+    GenServer.cast(name(), {:process, event, saga, metadata})
   end
 
   #########################################################
@@ -84,6 +84,9 @@ defmodule Meta.Saga.Test.WorkflowOne do
     Saga.process(id, next_step, metadata)
     {:noreply, state}
   end
+
+  def handle_info(_message, state),
+    do: {:noreply, state}
   #########################################################
   #
   #  Private functions
@@ -153,5 +156,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
 
   defp update_state(state, %{"id" => id, "current_step" => step}, metadata),
     do: %{state|"saga_id" => id, "current_step" => step, "metadata" => metadata}
+
+  defp name(), do: {:global, __MODULE__}
 
 end
