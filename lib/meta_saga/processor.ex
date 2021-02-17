@@ -43,6 +43,13 @@ defmodule Meta.Saga.Processor do
   end
 
   @impl MessageHandler
+
+  def handle(id, {{id, state}, event, metadata}, opts),
+    do: handle(id, {state, event, metadata}, opts)
+
+  def handle(id, {[state], event, metadata}, opts),
+    do: handle(id, {state, event, metadata}, opts)
+
   def handle(id, {%{"owner" => owner} = state, event, metadata}, _opts) do
     case dispatch_event(state, event) do
       {:error, state1} ->
