@@ -9,6 +9,7 @@
          stop_app_on_nodes/1,
          start_nodes/2,
          start_client_node/2,
+         start_core_node/2,
          start_node/2,
          start_app/1,
          stop_app/1,
@@ -23,9 +24,7 @@
 
 -export([
          start_deps/0,
-         start_core/0,
          stop_deps/0,
-         stop_core/0,
          load_env_variables/0
         ]).
 
@@ -56,31 +55,17 @@
 %%  etcd
 %%--------------------------------------------------------------------
 start_deps() ->
-    start_service("rabbitmq etcd riak_coordinator riak_member").
-
-start_core() ->
-    start_service("core", "service").
+    start_service("rabbitmq etcd").
 
 stop_deps() ->
     stop_services().
-
-stop_core() ->
-    stop_services("core").
 
 start_service(Service) ->
     Command = up_command(Service),
     exec_os_command(Command).
 
-start_service(ProjectName, Service) ->
-    Command = up_command(ProjectName, Service),
-    exec_os_command(Command).
-
 stop_services() ->
     Command = down_command(),
-    exec_os_command(Command).
-
-stop_services(ProjectName) ->
-    Command = down_command(ProjectName),
     exec_os_command(Command).
 
 load_env_variables() ->
@@ -189,23 +174,12 @@ docker_command(Command) ->
     ComposeFile = compose_file(),
     format("docker-compose -f ~s ~s", [ComposeFile, Command]).
 
-docker_command(ProjectName, Command) ->
-    ComposeFile = compose_file(ProjectName),
-    format("docker-compose -f ~s ~s", [ComposeFile, Command]).
-
 up_command(Service) ->
     Command = format("up -d --remove-orphans ~s", [Service]),
     docker_command(Command).
 
-up_command(ProjectName, Service) ->
-    Command = format("up -d --remove-orphans ~s", [Service]),
-    docker_command(ProjectName, Command).
-
 down_command() ->
     docker_command("down").
-
-down_command(ProjectName) ->
-    docker_command(ProjectName, "down").
 
 log(String) ->
     log("~s~n", [String]).
@@ -217,10 +191,6 @@ exec_os_command(Command) ->
 
 compose_file() ->
     path(?COMPOSE_FILE).
-
-compose_file(ProjectName) ->
-    Prefix = format("deps/~s", [ProjectName]),
-    path(Prefix, ?COMPOSE_FILE).
 
 project_root_directory() ->
     FilePath = code:which(?MODULE),
@@ -309,11 +279,15 @@ start_app_remote(Application, Node) ->
     PathToConfig  = get_config_path(atom_to_list(Application)),
     log("Path to config file ~p",[PathToConfig]),
     Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [PathToConfig],
-                  "application ~p read config", [Application], false),
+                  "application ~p read config~n", [Application], false),
     log("Read config result ~p",[Config]),
     Config1 = rpc_call(Node, ?ELIXIR_APP, put_all_env, [Config],
-                   "application ~p load env", [Application], false),
-    log("Load environment result ~p",[Config1]),
+                   "application ~p load env~n", [Application], false),
+    log("Load environment result ~p~n",[Config1]),
+    Config2 = rpc_call(Node, ?ELIXIR_APP, get_all_env, [Application],
+                       "application ~p read env~n", [Application], false),
+    log("Read environment result ~p~n",[Config2]),
+
     Applications = applications_to_start(Application),
     start_app_remote(Node, Applications, []).
 
@@ -339,11 +313,14 @@ start_node(Node, Acc) ->
 start_client_node(Node, Acc) ->
     start_node(test_saga, Node, Acc, false).
 
+start_core_node(Node, Acc) ->
+    start_node(core, Node, Acc, false).
+
 start_node(Application, Node, Acc, EnableDistributedLib) ->
     Node1 = start_app(Application, Node),
     wait_for_node(Node1, Application),
     exec_ready_wait(Node, EnableDistributedLib),
-    {ok, NodeId} = node_id(Node1),
+    {ok, NodeId} = node_id(Node1, EnableDistributedLib),
     Acc1 = maps:put(Node, NodeId, Acc),
     Acc2 = maps:put(NodeId, Node, Acc1),
     Acc3 = maps:put(Node1, NodeId, Acc2),
@@ -359,7 +336,13 @@ ring_nodes(Node) ->
     rpc_call(Node, ?HASH_RING, ring_nodes, []).
 
 node_id(Node) ->
-    rpc_call(Node, ?HASH_RING, local_node_id, []).
+    node_id(Node, true).
+
+node_id(Node, true) ->
+    rpc_call(Node, ?HASH_RING, local_node_id, []);
+
+node_id(Node, _EnableDistributedLib) ->
+    {ok, Node}.
 
 timestamp(TimeSpanSeconds) ->
     os:system_time(millisecond) + TimeSpanSeconds.
@@ -374,7 +357,7 @@ wait_for_ready_delayed(Node, Counter) ->
 
 exec_ready_wait(Node, true) ->
     wait_for_ready(Node);
-exec_ready_wait(Node, _) ->
+exec_ready_wait(_Node, _) ->
     ok.
 
 
@@ -424,10 +407,6 @@ is_app_started({Application, _Description, _Version}, Application) ->
 is_app_started(_, _) ->
     false.
 
-path(Prefix, RelativePath) ->
-    RelativePath1 = format("~s/~s", [Prefix, RelativePath]),
-    path(RelativePath1).
-
 path("deps/" ++ _ = RelativePath) ->
     ProjectDirectory = project_root_directory(),
     format("~s~s", [ProjectDirectory, RelativePath]);
@@ -456,12 +435,11 @@ prelude(Nodes, SagaNode) ->
 
 prelude(Nodes, SagaNode, Acc) ->
     load_env_variables(),
-    start_core(),
     start_deps(),
     Acc1 = start_nodes(Nodes, Acc),
-    start_client_node(SagaNode, Acc1).
+    Acc2 = start_core_node(core, Acc1),
+    start_client_node(SagaNode, Acc2).
 
 postlude() ->
-    stop_core(),
     stop_deps(),
     stop_app_on_nodes().

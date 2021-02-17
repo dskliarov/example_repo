@@ -34,7 +34,7 @@ defmodule Meta.Saga.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:test_saga, path: "test/common_tests/client", runtime: false},
-      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "dev", runtime: false}
+      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "default_backend", runtime: false}
     ]
   end
 
