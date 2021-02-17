@@ -32,7 +32,7 @@ defmodule Meta.Saga.Processor do
     do: handle_event(id, :stop, metadata)
 
   def get_saga(id, metadata \\ []) do
-    with {:ok, {_id, saga}} <- CoreClient.read(id, metadata) do
+    with {:ok, {_id, saga}} <- Core.read(id, metadata) do
       {:ok, saga}
       else
         {:ok, []} ->

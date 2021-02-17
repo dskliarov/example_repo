@@ -17,8 +17,8 @@ defmodule Meta.Saga.Client.Core do
     |> Client.exec()
   end
 
-  def read(id) do
-    id
+  def read(id, metadata) do
+    {id, metadata}
     |> read_args()
     |> Client.exec()
   end
