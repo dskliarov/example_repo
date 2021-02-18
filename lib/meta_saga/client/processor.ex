@@ -20,7 +20,7 @@ defmodule Meta.Saga.Client.Processor do
   #
   #########################################################
 
-  defp uri(service), do: "mq://#{service}"
+  defp uri(service), do: "rpc://#{service}"
 
   #--------------------------------------------------------
 
@@ -34,7 +34,7 @@ defmodule Meta.Saga.Client.Processor do
 
   #--------------------------------------------------------
 
-  defp payload(id, state, event) do
+  defp payload(id, %{"state" => state}, event) do
     %{
       "id" => id,
       "state" => state,

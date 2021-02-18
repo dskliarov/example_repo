@@ -1,6 +1,6 @@
 defmodule Meta.Saga.Test.Client.Handler do
 
-  alias Meta.Saga.Processor
+  alias Meta.Saga.Test.WorkflowOne
 
   require Logger
 
@@ -12,8 +12,10 @@ defmodule Meta.Saga.Test.Client.Handler do
   #
   #########################################################
 
-  def handle_message(@saga <> "response", request, metadata) do
-    :ok
+  def handle_message(@saga <> "response", %{"id" => id,
+                                            "event" => event,
+                                            "state" => state}, metadata) do
+    WorkflowOne.process(id, event, state, metadata)
   end
 
   #########################################################

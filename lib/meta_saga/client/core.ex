@@ -15,12 +15,14 @@ defmodule Meta.Saga.Client.Core do
     {id, data, metadata}
     |> write_args()
     |> Client.exec()
+    |> output()
   end
 
   def read(id, metadata) do
     {id, metadata}
     |> read_args()
     |> Client.exec()
+    |> output()
   end
 
   #########################################################
@@ -28,6 +30,8 @@ defmodule Meta.Saga.Client.Core do
   #  Private functions
   #
   #########################################################
+
+  defp output(value), do: value
 
   defp uri(action) do
     resource = @core <> action

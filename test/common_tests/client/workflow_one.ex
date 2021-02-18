@@ -3,7 +3,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
 
   alias Meta.Saga.Test.{Saga, Utility}
 
-  @step_timeout 1000
+  @step_timeout 500
   @initialize "initialize"
   @step1 "step1"
   @step2 "step2"
@@ -28,8 +28,8 @@ defmodule Meta.Saga.Test.WorkflowOne do
 
   def exec_saga(), do: GenServer.call(name(), :exec_saga)
 
-  def process(event, saga, metadata) do
-    GenServer.cast(name(), {:process, event, saga, metadata})
+  def process(id, event, saga, metadata) do
+    GenServer.cast(name(), {:process, id, event, saga, metadata})
   end
 
   #########################################################
@@ -59,7 +59,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #########################################################
 
   @impl GenServer
-  def handle_cast({{:process, event, %{"id" => id, "state" => saga}, metadata}}, state) do
+  def handle_cast({{:process, id, event, saga, metadata}}, state) do
     case dispatch(event, saga) do
       %{"current_step" => @last_step, "history" => history} ->
         %{"reply_to" => reply_to} = state

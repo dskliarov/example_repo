@@ -2,7 +2,8 @@ defmodule Meta.Saga.Processor do
 
   alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.Cron
-  alias Meta.Saga.Client.{Core, Processor}
+  alias Meta.Saga.Client.Core, as: CoreClient
+  alias Meta.Saga.Client.Processor, as: ProcessorClient
 
   @behaviour MessageHandler
 
@@ -32,7 +33,7 @@ defmodule Meta.Saga.Processor do
     do: handle_event(id, :stop, metadata)
 
   def get_saga(id, metadata \\ []) do
-    with {:ok, {_id, saga}} <- Core.read(id, metadata) do
+    with {:ok, [{_id, saga}]} <- CoreClient.read(id, metadata) do
       {:ok, saga}
       else
         {:ok, []} ->
@@ -53,17 +54,17 @@ defmodule Meta.Saga.Processor do
   def handle(id, {%{"owner" => owner} = state, event, metadata}, _opts) do
     case dispatch_event(state, event) do
       {:error, state1} ->
-        Processor.execute({id, state1, :error, owner}, metadata)
+        ProcessorClient.execute({id, state1, :error, owner}, metadata)
       {:execute_process, {state1, current_event, process_timeout}} ->
-        Processor.execute({id, state1, current_event, owner}, metadata)
+        ProcessorClient.execute({id, state1, current_event, owner}, metadata)
         Cron.add_execute_timeout(id, process_timeout)
       {:idle, state1, idle_timeout} ->
-        Core.write(id, state1, metadata)
+        CoreClient.write(id, state1, metadata)
         Cron.add_idle_timeout(id, idle_timeout)
       {:queue, state1} ->
-        Core.write(id, state1, metadata)
+        CoreClient.write(id, state1, metadata)
       {:stop, state1} ->
-        Core.write(id, state1, metadata)
+        CoreClient.write(id, state1, metadata)
       {:ignore, _state} ->
         :ok
     end
@@ -93,7 +94,8 @@ defmodule Meta.Saga.Processor do
                         current_event,
                         retry_counter
                         }} = state, :processor_timeout) do
-    state = %{state|"process" => {current_event, retry_counter - 1}}
+    retry_counter1 = retry_counter - 1
+    state = %{state|"process" => {current_event, retry_counter1}}
     process_timeout = Map.get(state, "process_timeout", @process_timeout)
     {:execute_process, {state, current_event, process_timeout}}
   end
