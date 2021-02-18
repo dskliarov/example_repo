@@ -25,9 +25,11 @@ defmodule Meta.Saga.Processor do
   end
 
   def handle_event(id, event, metadata) do
-    with {:ok, saga} <- get_saga(id),
-      do: DistributedLib.process(id, {saga, event, metadata}, __MODULE__)
-  end
+    case get_saga(id) do
+      {:ok, saga} ->
+        DistributedLib.process(id, {saga, event, metadata}, __MODULE__)
+    end
+    end
 
   def stop(id, metadata),
     do: handle_event(id, :stop, metadata)
@@ -38,7 +40,7 @@ defmodule Meta.Saga.Processor do
       else
         {:ok, []} ->
           {:error, :not_found}
-        error ->
+      error ->
           error
     end
   end
@@ -56,11 +58,12 @@ defmodule Meta.Saga.Processor do
       {:error, state1} ->
         ProcessorClient.execute({id, state1, :error, owner}, metadata)
       {:execute_process, {state1, current_event, process_timeout}} ->
-        ProcessorClient.execute({id, state1, current_event, owner}, metadata)
+        {:ok, "ok"} = Processor.execute({id, state1, current_event, owner}, metadata)
         Cron.add_execute_timeout(id, process_timeout)
+        :ok
       {:idle, state1, idle_timeout} ->
-        CoreClient.write(id, state1, metadata)
-        Cron.add_idle_timeout(id, idle_timeout)
+        {:ok, _} = Core.write(id, state1, metadata)
+        :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, state1} ->
         CoreClient.write(id, state1, metadata)
       {:stop, state1} ->
@@ -86,7 +89,7 @@ defmodule Meta.Saga.Processor do
   end
 
   defp dispatch_event(%{"process" => {_current_event, 0}} = state,
-    :processor_timeout) do
+    :process_timeout) do
     {:error, state}
   end
 
@@ -96,18 +99,18 @@ defmodule Meta.Saga.Processor do
                         }} = state, :processor_timeout) do
     retry_counter1 = retry_counter - 1
     state = %{state|"process" => {current_event, retry_counter1}}
-    process_timeout = Map.get(state, "process_timeout", @process_timeout)
+    process_timeout = Map.get(get_options(state), "process_timeout", @process_timeout)
     {:execute_process, {state, current_event, process_timeout}}
   end
 
   defp dispatch_event(%{"events_queue" => queue} = state, :idle) do
     case :queue.out(queue) do
       {:empty, _queue1} ->
-        idle_timeout = Map.get(state, "idle_timeout", @idle_timeout)
+        idle_timeout = Map.get(get_options(state), "idle_timeout", @idle_timeout)
         {:idle, state, idle_timeout}
       {{:value, event}, queue1} ->
-        retry_counter = Map.get(state, "retry_counter", @retry_counter)
-        process_timeout = Map.get(state, "process_timeout", @process_timeout)
+        retry_counter = Map.get(get_options(state), "retry_counter", @retry_counter)
+        process_timeout = Map.get(get_options(state), "process_timeout", @process_timeout)
         state = %{state|"process" =>
                    {event, retry_counter},
                   "events_queue" => queue1}
@@ -116,8 +119,8 @@ defmodule Meta.Saga.Processor do
   end
 
   defp dispatch_event(%{"process" => ""} = state, event) do
-    retry_counter = Map.get(state, "retry_counter", @retry_counter)
-    process_timeout = Map.get(state, "process_timeout", @process_timeout)
+    retry_counter = Map.get(get_options(state), "retry_counter", @retry_counter)
+    process_timeout = Map.get(get_options(state), "process_timeout", @process_timeout)
     state = %{state|"process" => {event, retry_counter}}
     {:execute_process, {state, event, process_timeout}}
   end
@@ -134,5 +137,9 @@ defmodule Meta.Saga.Processor do
       "process" => "",
       "events_queue" => :queue.new()
     }
+  end
+  
+  defp get_options(state) do
+    Map.get(Map.get(state, "state", Map.new()), "options", Map.new())
   end
 end

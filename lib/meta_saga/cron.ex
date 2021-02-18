@@ -9,9 +9,9 @@ defmodule Meta.Saga.Cron do
   #
   #########################################################
 
-  def add_execute_timeout(id, timeout) do
-    {Processor, :handle_event, [id, :processor_timeout]}
-    |> add_timeout(id, timeout)
+  def add_execute_timeout(id, timestamp) do
+    {Processor, :handle_event, [id, :process_timeout]}
+    |> add_timeout(id, timestamp)
   end
 
   def add_idle_timeout(id, timeout) do

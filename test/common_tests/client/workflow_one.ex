@@ -10,7 +10,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   @step3 "step3"
   @step4 "step4"
   @last_step "last_step"
-
+  
   #########################################################
   #
   #   API
@@ -49,7 +49,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   @impl GenServer
   def handle_call(:exec_saga, from, state) do
     %{"id" => id} = saga = init_saga()
-    Saga.idle(id, saga, [])
+    {:ok, "ok"} = Saga.idle(id, saga, [])
     state1 = update_state(state, saga, [])
     {:noreply, %{state1|"reply_to" => from} , @step_timeout}
   end
@@ -72,6 +72,10 @@ defmodule Meta.Saga.Test.WorkflowOne do
     end
   end
 
+  def handle_cast(any, state) do
+    {:noreply, state}
+  end
+
   #########################################################
   #   other messages callbacks
   #########################################################
@@ -80,13 +84,14 @@ defmodule Meta.Saga.Test.WorkflowOne do
   def handle_info(:timeout, %{"saga_id" => id,
                               "current_step" => step,
                               "metadata" => metadata} = state) do
-    next_step = next_step(step)
-    Saga.process(id, next_step, metadata)
+      next_step = next_step(step)
+    rr = Saga.process(id, next_step, metadata)
     {:noreply, state}
   end
 
-  def handle_info(_message, state),
-    do: {:noreply, state}
+  def handle_info(_message, state) do
+    {:noreply, state}
+  end
   #########################################################
   #
   #  Private functions
