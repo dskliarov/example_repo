@@ -58,16 +58,16 @@ defmodule Meta.Saga.Processor do
       {:error, state1} ->
         ProcessorClient.execute({id, state1, :error, owner}, metadata)
       {:execute_process, {state1, current_event, process_timeout}} ->
-        {:ok, "ok"} = Processor.execute({id, state1, current_event, owner}, metadata)
+        {:ok, "ok"} = ProcessorClient.execute({id, state1, current_event, owner}, metadata)
         Cron.add_execute_timeout(id, process_timeout)
         :ok
       {:idle, state1, idle_timeout} ->
-        {:ok, _} = Core.write(id, state1, metadata)
+        {:ok, _} = CoreClient.write(id, state1, metadata)
         :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, state1} ->
-        CoreClient.write(id, state1, metadata)
+        {:ok, _} = CoreClient.write(id, state1, metadata)
       {:stop, state1} ->
-        CoreClient.write(id, state1, metadata)
+        {:ok, _} = CoreClient.write(id, state1, metadata)
       {:ignore, _state} ->
         :ok
     end

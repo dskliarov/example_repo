@@ -47,11 +47,12 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #########################################################
 
   @impl GenServer
-  def handle_call(:exec_saga, from, state) do
+  def handle_call(:exec_saga, from, %{"timer_ref" => old_ref} = state) do
     %{"id" => id} = saga = init_saga()
     {:ok, "ok"} = Saga.idle(id, saga, [])
     state1 = update_state(state, saga, [])
-    {:noreply, %{state1|"reply_to" => from} , @step_timeout}
+    ref = restart_timer(old_ref)
+    {:noreply, %{state1|"reply_to" => from, "timer_ref" => ref}}
   end
 
   #########################################################
@@ -59,21 +60,23 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #########################################################
 
   @impl GenServer
-  def handle_cast({{:process, id, event, saga, metadata}}, state) do
+  def handle_cast({:process, id, event, saga, metadata}, %{"timer_ref" => old_ref} = state) do
     case dispatch(event, saga) do
       %{"current_step" => @last_step, "history" => history} ->
         %{"reply_to" => reply_to} = state
-        GenServer.reply(reply_to, history)
+        GenServer.reply(reply_to, :lists.reverse(history))
         {:noreply, initial_state()}
       saga1 ->
-        Saga.idle(id, saga, metadata)
+        {:ok, "ok"} = Saga.idle(id, saga1, metadata)
         state1 = update_state(state, saga1, metadata)
-        {:noreply, state1, @step_timeout}
+        ref = restart_timer(old_ref)
+        {:noreply, %{state1|"timer_ref" => ref}}
     end
   end
 
-  def handle_cast(any, state) do
-    {:noreply, state}
+  def handle_cast(any, %{"timer_ref" => old_ref} = state) do
+    ref = restart_timer(old_ref)
+    {:noreply, %{state|"timer_ref" => ref}}
   end
 
   #########################################################
@@ -84,13 +87,14 @@ defmodule Meta.Saga.Test.WorkflowOne do
   def handle_info(:timeout, %{"saga_id" => id,
                               "current_step" => step,
                               "metadata" => metadata} = state) do
-      next_step = next_step(step)
-    rr = Saga.process(id, next_step, metadata)
+    next_step = next_step(step)
+    {:ok, "ok"} = Saga.process(id, next_step, metadata)
     {:noreply, state}
   end
-
-  def handle_info(_message, state) do
-    {:noreply, state}
+#
+  def handle_info(_message, %{"timer_ref" => old_ref} = state) do
+    ref = restart_timer(old_ref)
+    {:noreply, %{state|"timer_ref" => ref}}
   end
   #########################################################
   #
@@ -111,7 +115,8 @@ defmodule Meta.Saga.Test.WorkflowOne do
           "saga_id" => nil,
           "current_step" => nil,
           "reply_to" => nil,
-          "metadata" => nil
+          "metadata" => nil,
+          "timer_ref" => nil 
     }
 
   defp dispatch({current_step, _data} = event, saga),
@@ -132,7 +137,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   defp update_step(current_step, %{"history" => history} = saga) do
     %{saga|
       "current_step" => current_step,
-      "history" => [history] ++ [current_step]}
+      "history" => [current_step | history]}
   end
 
   defp validate_step(@step1, %{"current_step" => @initialize}),
@@ -163,5 +168,14 @@ defmodule Meta.Saga.Test.WorkflowOne do
     do: %{state|"saga_id" => id, "current_step" => step, "metadata" => metadata}
 
   defp name(), do: {:global, __MODULE__}
+  
+  def restart_timer(nil) do
+    Process.send_after(self(), :timeout, @step_timeout)
+  end
+  
+  def restart_timer(ref) do
+    Process.cancel_timer(ref)
+    restart_timer(nil)
+  end
 
 end
