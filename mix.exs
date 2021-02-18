@@ -30,13 +30,13 @@ defmodule Meta.Saga.MixProject do
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
       # {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
       {:distributed_lib, path: "/Users/dskliarov/erlang_projects/distributed_lib"},
+#      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
 
       # Devops dependencies
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:test_saga, path: "test/common_tests/client", runtime: false},
-      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "default_backend", runtime: false},
-      {:redbug, git: "https://github.com/massemanet/redbug.git"},
+      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "default_backend", runtime: false}
     ]
   end
 
