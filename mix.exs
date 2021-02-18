@@ -29,8 +29,8 @@ defmodule Meta.Saga.MixProject do
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
       # {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
-      {:distributed_lib, path: "/Users/dskliarov/erlang_projects/distributed_lib"},
-#      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
+#      {:distributed_lib, path: "/Users/dskliarov/erlang_projects/distributed_lib"},
+      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
 
       # Devops dependencies
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
