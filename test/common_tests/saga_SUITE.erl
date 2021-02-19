@@ -19,9 +19,8 @@ suite() ->
     ].
 
 init_per_suite(_Config) ->
-    test_helper:start_deps(),
-    test_helper:start_core(),
     test_helper:load_env_variables(),
+    test_helper:start_deps(),
     Nodes = [dev1],
     SagaNode = saga_client,
     SortedNodes = lists:sort(Nodes),
@@ -32,7 +31,6 @@ init_per_suite(_Config) ->
 
 end_per_suite(_Config) ->
     test_helper:stop_deps(),
-    test_helper:stop_core(),
     ok.
 
 %%--------------------------------------------------------------------
@@ -96,12 +94,14 @@ all() ->
 saga_group({prelude, Config}) ->
     Nodes = proplists:get_value(nodes, Config),
     SagaNode = proplists:get_value(saga_node, Config),
+
     ClusterInfo = test_helper:start_nodes(Nodes, #{}),
+    CoreInfo = test_helper:start_core_node(core, #{}),
     SagaInfo = test_helper:start_client_node(SagaNode, #{}),
-    [{cluster_info, ClusterInfo}, {saga_info, SagaInfo}|Config];
+    [{cluster_info, ClusterInfo}, {saga_info, SagaInfo}, {core_info, CoreInfo}|Config];
 saga_group({postlude, Config}) ->
     Nodes = proplists:get_value(nodes, Config),
-    test_helper:stop_app_on_nodes(Nodes),
+    test_helper:stop_app_on_nodes(),
     ok.
 
 saga_happy_path({info, _Config}) ->
