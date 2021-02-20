@@ -13,9 +13,9 @@ The `saga` could be in 2 possible states: an **idle or a **process.
    with an exception. The exception completion and handling is not done yet - wip. 
 
 The Service accepts following commands:
- - idle
- - process
- - get
+ - **idle
+ - **process
+ - **get
  
 ## The `idle` command
 
