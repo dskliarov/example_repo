@@ -23,12 +23,8 @@ defmodule Meta.Saga.Test.Saga do
   end
 
   def process(id, event, metadata) do
-    process(id, event, nil, metadata)
-  end
-
-  def process(id, event, data, metadata) do
     :process
-    |> payload(id, event, data)
+    |> payload(id, event)
     |> exec(@process, metadata)
   end
 
@@ -46,6 +42,12 @@ defmodule Meta.Saga.Test.Saga do
     payload
     |> args(action, metadata)
     |> Client.exec()
+    |> execution_result_log(payload, action)
+  end
+
+  defp execution_result_log(result, payload, action) do
+    :ct.log('Send action: ~p for saga: ~p with result ~p~n',
+      [action, payload, result])
   end
 
   defp args(payload, action, metadata) do
@@ -65,21 +67,9 @@ defmodule Meta.Saga.Test.Saga do
   end
 
   defp payload(:process, id, event) do
-    payload(:process, id, event, nil)
-  end
-
-  defp payload(:process, id, event, nil) do
     %{
       "id" => id,
       "event" => event
-    }
-  end
-
-  defp payload(:process, id, event, data) do
-    %{
-      "id" => id,
-      "event" => event,
-      "data" => data
     }
   end
 

@@ -1,4 +1,4 @@
-defmodule Meta.Saga.Test.WorkflowOne do
+defmodule Meta.Saga.Test.WorkflowTwo do
   use GenServer
 
   alias Meta.Saga.Test.{Saga, Utility}
@@ -39,11 +39,8 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #########################################################
 
   @impl GenServer
-  def init(_options) do
-    state = initial_state()
-    :ct.log('Init saga ~p~n', [state])
-    {:ok, state}
-  end
+  def init(_options),
+    do: {:ok, initial_state()}
 
   #########################################################
   #   Call callbacks
@@ -63,15 +60,12 @@ defmodule Meta.Saga.Test.WorkflowOne do
 
   @impl GenServer
   def handle_cast({:process, id, event, saga, metadata}, state) do
-    :ct.log('Process id: ~p, saga: ~p, event: ~p  ~p~n', [id, saga, event])
     case dispatch(event, saga) do
       %{"current_step" => @last_step, "history" => history} ->
         %{"reply_to" => reply_to} = state
-        :ct.log('Dispatched last step; history: ~p~n', [history])
         GenServer.reply(reply_to, :lists.reverse(history))
         {:noreply, initial_state()}
       saga1 ->
-        :ct.log('Dispatched last step; saga: ~p~n', [saga1])
         {:ok, "ok"} = Saga.idle(id, saga1, metadata)
         state1 = update_state(state, saga1, metadata)
         {:noreply, state1, @step_timeout}
@@ -87,7 +81,6 @@ defmodule Meta.Saga.Test.WorkflowOne do
                               "current_step" => step,
                               "metadata" => metadata} = state) do
     next_step = next_step(step)
-    :ct.log('Emulate next command: ~p~n', [next_step])
     {:ok, "ok"} = Saga.process(id, next_step, metadata)
     {:noreply, state}
   end

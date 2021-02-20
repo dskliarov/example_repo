@@ -19,7 +19,8 @@
          rpc_call/7,
          format/2,
          find_ring_node/2,
-         ring_nodes/1
+         ring_nodes/1,
+         log/2
         ]).
 
 -export([
