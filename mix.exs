@@ -8,7 +8,6 @@ defmodule Meta.Saga.MixProject do
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      xref: [exclude: :ct],
       deps: deps()
     ]
   end
