@@ -14,6 +14,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   @step3 "step3"
   @step4 "step4"
   @last_step "last_step"
+  @stop "stop"
 
   #########################################################
   #
@@ -28,7 +29,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
     do: GenServer.stop(name())
 
   def expected_history(),
-    do: [@initialize, @step1, @step2, @step3, @step4, @last_step]
+    do: [@initialize, @step1, @step2, @step3, @step4, @last_step, @stop]
 
   def exec_saga(), do: GenServer.call(name(), :exec_saga)
 
@@ -69,14 +70,17 @@ defmodule Meta.Saga.Test.WorkflowOne do
   def handle_cast({:process, id, event, saga, metadata}, state) do
     :ct.log(:info, 75, 'Process id: ~p, saga: ~p, event: ~p~n', [id, saga, event])
     case dispatch(event, saga) do
-      %{"current_step" => @last_step, "history" => history, "state" => saga1} ->
+      %{"current_step" => @stop, "history" => history} ->
         %{"reply_to" => reply_to} = state
-        :ct.log(:info, 75, 'Dispatched last step; history: ~p~n', [history])
-        {:ok, "ok"} = Saga.process(id, "stop", metadata, saga1)
+        :ct.log(:info, 75, 'Dispatched stop event; history: ~p~n', [history])
         GenServer.reply(reply_to, :lists.reverse(history))
         {:noreply, initial_state()}
+      %{"current_step" => @last_step} = saga1 ->
+        :ct.log(:info, 75, 'Dispatched last step; saga: ~p~n', [saga1])
+        {:ok, "ok"} = Saga.process(id, "stop", metadata, saga1)
+        {:noreply, state}
       saga1 ->
-        :ct.log('Dispatched last step; saga: ~p~n', [saga1])
+        :ct.log('Dispatched step ~p; saga: ~p~n', [event, saga1])
         {:ok, "ok"} = Saga.idle(id, saga1, metadata)
         state1 = update_state(state, saga1, metadata)
         {:noreply, state1, @step_timeout}
@@ -158,6 +162,8 @@ defmodule Meta.Saga.Test.WorkflowOne do
   defp validate_step(@last_step, %{"current_step" => @step4}),
     do: :valid
 
+  defp validate_step(@stop, %{"current_step" => @last_step}),
+    do: :valid
 
   defp validate_step(_step, _state), do: :invalid
 
@@ -166,6 +172,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   defp next_step(@step2), do: @step3
   defp next_step(@step3), do: @step4
   defp next_step(@step4), do: @last_step
+  defp next_step(@last_step), do: @stop
 
   defp update_state(state, %{"id" => id, "current_step" => step}, metadata),
     do: %{state|"saga_id" => id, "current_step" => step, "metadata" => metadata}
