@@ -15,6 +15,10 @@ defmodule Meta.Saga.Test.Client.Application do
       %{
         :id => Meta.Saga.Test.WorkflowOne,
         :start => {Meta.Saga.Test.WorkflowOne, :start_link, []}
+      },
+      %{
+        :id => Meta.Saga.Test.WorkflowTwo,
+        :start => {Meta.Saga.Test.WorkflowTwo, :start_link, []}
       }
     ]
     # See https://hexdocs.pm/elixir/Supervisor.html

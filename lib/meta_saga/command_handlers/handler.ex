@@ -13,13 +13,18 @@ defmodule Meta.Saga.CommandHandlers.Handler do
   #########################################################
 
   def handle_message(@saga <> "idle", request, metadata),
-    do: Processor.handle_event(request, :idle, metadata)
+    do: Processor.handle_event(request, "idle", metadata)
 
   def handle_message(@saga <> "get", %{"id" => id}, metadata),
     do: Processor.get_saga(id, metadata)
 
-  def handle_message(@saga <> "stop", %{"id" => id, "event" => "stop"}, metadata),
+  def handle_message(@saga <> "stop", %{"id" => id}, metadata),
     do: Processor.stop(id, metadata)
+
+  def handle_message(@saga <> "process", %{"id" => id,
+                                           "event" => "stop"}, metadata) do
+    Processor.stop(id, metadata)
+  end
 
   def handle_message(@saga <> "process", %{"id" => id} = request, metadata) do
     event = event(request)

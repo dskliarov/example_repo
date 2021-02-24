@@ -3,7 +3,7 @@
 The "Saga" service add distributed transaction features to the system.
 The Service allow to manage a long running transaction - a transaction, which potentially could take days and even months to complete.
 
-The Service is store the state of the running `saga` into the `event store` and enable tracking of the timeout of the current step. 
+The Service stores the state of the running `saga` into the `event store` and enable tracking of the timeout of the current step. 
 The `saga` could be in 2 possible states: an **idle or a **process. 
  - The **idle state - is a state of waiting for any commands addressed to the saga.
  - When the Service processing the command addressed to the specific saga, it will read a state from the database, 

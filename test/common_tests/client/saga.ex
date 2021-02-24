@@ -16,15 +16,15 @@ defmodule Meta.Saga.Test.Saga do
   #
   #########################################################
 
-  def idle(id, saga, metadata) do
+  def idle(id, saga, metadata, options \\ []) do
     :idle
-    |> payload(id, saga)
+    |> payload(id, saga, options)
     |> exec(@idle, metadata)
   end
 
-  def process(id, event, metadata) do
+  def process(id, event, metadata, saga \\ nil) do
     :process
-    |> payload(id, event)
+    |> payload(id, event, saga)
     |> exec(@process, metadata)
   end
 
@@ -48,6 +48,7 @@ defmodule Meta.Saga.Test.Saga do
   defp execution_result_log(result, payload, action) do
     :ct.log('Send action: ~p for saga: ~p with result ~p~n',
       [action, payload, result])
+    result
   end
 
   defp args(payload, action, metadata) do
@@ -58,26 +59,34 @@ defmodule Meta.Saga.Test.Saga do
     ]
   end
 
-  defp payload(:idle, id, saga) do
+  defp payload(:idle, id, saga, options) do
     %{
       "id" => id,
       "owner" => @owner,
-      "state" => Map.merge(saga, options())
+      "state" => Map.merge(saga, options(options))
     }
   end
 
-  defp payload(:process, id, event) do
+  defp payload(:process, id, event, nil) do
     %{
       "id" => id,
       "event" => event
     }
   end
 
-  defp options() do
+  defp payload(:process, id, event, saga) do
+    %{
+      "id" => id,
+      "event" => event,
+      "state" => saga
+    }
+  end
+
+  defp options(options) do
     %{"options" => %{
-      "idle_timeout" => @idle_timeout,
-      "process_timeout" => @process_timeout,
-      "retry_counter" => @retry_counter
+      "idle_timeout" => Keyword.get(options, :idle_timeout, @idle_timeout),
+      "process_timeout" => Keyword.get(options, :process_timeout, @process_timeout),
+      "retry_counter" => Keyword.get(options, :retry_counter, @retry_counter)
     }}
   end
 

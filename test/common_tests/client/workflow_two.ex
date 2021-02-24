@@ -1,6 +1,10 @@
 defmodule Meta.Saga.Test.WorkflowTwo do
   use GenServer
 
+  #########################################################
+  #   Example Saga with Idle Timeout                      #
+  #########################################################
+
   alias Meta.Saga.Test.{Saga, Utility}
 
   @step_timeout 500
@@ -10,6 +14,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   @step3 "step3"
   @step4 "step4"
   @last_step "last_step"
+  @emulate_idle_timeout 200
 
   #########################################################
   #
@@ -66,7 +71,8 @@ defmodule Meta.Saga.Test.WorkflowTwo do
         GenServer.reply(reply_to, :lists.reverse(history))
         {:noreply, initial_state()}
       saga1 ->
-        {:ok, "ok"} = Saga.idle(id, saga1, metadata)
+        options = idle_options(event)
+        {:ok, "ok"} = Saga.idle(id, saga1, metadata, options)
         state1 = update_state(state, saga1, metadata)
         {:noreply, state1, @step_timeout}
     end
@@ -93,6 +99,11 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   #  Private functions
   #
   #########################################################
+
+  defp idle_options(_event) do
+    [idle_timeout: @emulate_idle_timeout,
+     retry_counter: 3]
+  end
 
   defp init_saga() do
     %{

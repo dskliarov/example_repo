@@ -1,6 +1,10 @@
 defmodule Meta.Saga.Test.WorkflowOne do
   use GenServer
 
+  #########################################################
+  #   Example Saga - Happy Path                           #
+  #########################################################
+
   alias Meta.Saga.Test.{Saga, Utility}
 
   @step_timeout 500
@@ -41,7 +45,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   @impl GenServer
   def init(_options) do
     state = initial_state()
-    :ct.log('Init saga ~p~n', [state])
+    :ct.log(:info, 75, 'Init saga ~p~n', [state])
     {:ok, state}
   end
 
@@ -63,11 +67,12 @@ defmodule Meta.Saga.Test.WorkflowOne do
 
   @impl GenServer
   def handle_cast({:process, id, event, saga, metadata}, state) do
-    :ct.log('Process id: ~p, saga: ~p, event: ~p  ~p~n', [id, saga, event])
+    :ct.log(:info, 75, 'Process id: ~p, saga: ~p, event: ~p~n', [id, saga, event])
     case dispatch(event, saga) do
-      %{"current_step" => @last_step, "history" => history} ->
+      %{"current_step" => @last_step, "history" => history, "state" => saga1} ->
         %{"reply_to" => reply_to} = state
-        :ct.log('Dispatched last step; history: ~p~n', [history])
+        :ct.log(:info, 75, 'Dispatched last step; history: ~p~n', [history])
+        {:ok, "ok"} = Saga.process(id, "stop", metadata, saga1)
         GenServer.reply(reply_to, :lists.reverse(history))
         {:noreply, initial_state()}
       saga1 ->
@@ -87,7 +92,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
                               "current_step" => step,
                               "metadata" => metadata} = state) do
     next_step = next_step(step)
-    :ct.log('Emulate next command: ~p~n', [next_step])
+    :ct.log(:info, 75, 'Emulate next command: ~p~n', [next_step])
     {:ok, "ok"} = Saga.process(id, next_step, metadata)
     {:noreply, state}
   end
