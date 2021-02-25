@@ -59,7 +59,8 @@ defmodule Meta.Saga.Test.WorkflowOne do
     %{"id" => id} = saga = init_saga()
     {:ok, "ok"} = Saga.idle(id, saga, [])
     state1 = update_state(state, saga, [])
-    {:noreply, %{state1|"reply_to" => from}, @step_timeout}
+    metadata = [saga_id: id, saga_module: __MODULE__]
+    {:noreply, %{state1|"reply_to" => from, "metadata" => metadata}, @step_timeout}
   end
 
   #########################################################

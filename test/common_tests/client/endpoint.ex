@@ -5,4 +5,5 @@ defmodule Meta.Saga.Test.Client.Endpoint do
   alias Meta.Saga.Test.Client, as: Command
 
   command("response", Command.Handler)
+  command("remote_service_response_emulator", Command.Handler)
 end

@@ -16,6 +16,7 @@ The Service accepts following commands:
  - **idle
  - **process
  - **get
+ - **stop
  
 ## The `idle` command
 
@@ -87,6 +88,65 @@ The Service accepts following commands:
 
    args = [
       to: "rpc://svc.meta.saga2.get,
+      payload: payload,
+      metadata: metadata
+    ]
+
+  Wizard.Client.exec(args)
+ ```
+
+## The `stop` command
+
+ This command will stop saga execution;
+ After saga have been switched to the stop state,
+ it will ignore all events, which will arrave after that.
+
+ If saga state will be passed along with id, saga will be updated in the event store.
+
+ The API call by using client wizard:
+
+ ```
+    metadata = []
+
+    state = %{
+      "id" => "some_id",
+      "some_property" => "some_value"
+    }
+
+    payload = %{
+      "id" => id,
+      ## The state property is optional!!!
+      "state => state
+    }
+
+   args = [
+      to: "rpc://svc.meta.saga2.stop,
+      payload: payload,
+      metadata: metadata
+    ]
+
+  Wizard.Client.exec(args)
+ ```
+
+ The other way to stop saga is send `stop` event to the process endpoint :
+
+ ```
+    metadata = []
+
+    state = %{
+      "id" => "some_id",
+      "some_property" => "some_value"
+    }
+
+    payload = %{
+      "id" => id,
+      "event" => "stop",
+      ## The state property is optional!!!
+      "state => state
+    }
+
+   args = [
+      to: "rpc://svc.meta.saga2.process,
       payload: payload,
       metadata: metadata
     ]

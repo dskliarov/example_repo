@@ -119,14 +119,15 @@ defmodule Meta.Saga.Processor do
   #########################################################
 
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
-  defp finalize_saga(id, saga_payload, owner, {"stop", _saga}, metadata),
-    do: finalize_saga(id, saga_payload, owner, "stop", metadata)
-
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
     with {:ok, _} <- Saga.core_write(id, saga_payload, %{metadata: metadata}),
+         :ok <- Cron.delete_timeout(id),
          {:ok, "ok"} <- Owner.execute(id, state, "stop", owner, metadata),
-      do: Cron.delete_timeout(id)
+      do: :ok
   end
+
+  defp finalize_saga(id, saga_payload, owner, {"stop", _saga}, metadata),
+    do: finalize_saga(id, saga_payload, owner, "stop", metadata)
 
   @spec dispatch_event(saga_payload, event) :: dispatch_command()
   defp dispatch_event(saga_payload, "stop") do

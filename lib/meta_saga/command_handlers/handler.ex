@@ -37,7 +37,7 @@ defmodule Meta.Saga.CommandHandlers.Handler do
   end
 
   def handle_message(@saga <> "process", request, metadata) do
-    case Keyword.get(metadata, "saga_id", nil) do
+    case Keyword.get(metadata, :saga_id, nil) do
       nil ->
         {:error, "Invalid request. Saga Id is not present."}
       id ->
