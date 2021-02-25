@@ -4,7 +4,7 @@ defmodule Meta.Saga.Endpoint do
   alias Meta.Saga.CommandHandlers.Handler
 
   command("idle", Handler, input_schema: {:json, "idle.json"})
-  command("stop", Handler, input_schema: {:json, "stop.json"})
   command("get", Handler, input_schema: {:json, "get.json"})
+  command("stop", Handler)
   command("process", Handler)
 end
