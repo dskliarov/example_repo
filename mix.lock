@@ -10,8 +10,8 @@
   "credentials_obfuscation": {:hex, :credentials_obfuscation, "2.3.0", "8631d941b25bc0a6681f635d3d26dd5365f935fcc2d328d64c77ea611b5dd932", [:rebar3], [], "hexpm", "9f8f05d0ad8a9d7417c30d6fb4b407f1de3d0b795ce68445da07d77837056d03"},
   "credo": {:hex, :credo, "1.5.5", "e8f422026f553bc3bebb81c8e8bf1932f498ca03339856c7fec63d3faac8424b", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, repo: "hexpm", optional: false]}, {:file_system, "~> 0.2.8", [hex: :file_system, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "dd8623ab7091956a855dc9f3062486add9c52d310dfd62748779c4315d8247de"},
   "ctx": {:hex, :ctx, "0.6.0", "8ff88b70e6400c4df90142e7f130625b82086077a45364a78d208ed3ed53c7fe", [:rebar3], [], "hexpm", "a14ed2d1b67723dbebbe423b28d7615eb0bdcba6ff28f2d1f1b0a7e1d4aa5fc2"},
-  "dialyxir": {:hex, :dialyxir, "1.0.0", "6a1fa629f7881a9f5aaf3a78f094b2a51a0357c843871b8bc98824e7342d00a5", [:mix], [{:erlex, ">= 0.2.6", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "aeb06588145fac14ca08d8061a142d52753dbc2cf7f0d00fc1013f53f8654654"},
-  "distributed_lib": {:git, "git@gitlab.aeon.world:tools/distributed_lib.git", "aa5f619af947997572df6da3a7dff87465c1a5c1", [branch: "pseudo-async_call"]},
+  "dialyxir": {:hex, :dialyxir, "1.1.0", "c5aab0d6e71e5522e77beff7ba9e08f8e02bad90dfbeffae60eaf0cb47e29488", [:mix], [{:erlex, ">= 0.2.6", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "07ea8e49c45f15264ebe6d5b93799d4dd56a44036cf42d0ad9c960bc266c0b9a"},
+  "distributed_lib": {:git, "git@gitlab.aeon.world:tools/distributed_lib.git", "9b04aed37e8e0f6e6621124b14919c81fd0f62dd", [branch: "dev"]},
   "eetcd": {:hex, :eetcd, "0.3.3", "df15809c7d5f9c9120554f5f30dabc93b91dd707e1db5ed952f149a103622854", [:rebar3], [{:gun, "1.3.3", [hex: :gun, repo: "hexpm", optional: false]}], "hexpm", "8fb280156ddd1b7b34d0f446c5711832385bff512c05378dcea8362f4f5060d6"},
   "elli": {:hex, :elli, "3.3.0", "089218762a7ff3d20ae81c8e911bd0f73ee4ee0ed85454226d1fc6b4fff3b4f6", [:rebar3], [], "hexpm", "698b13b33d05661db9fe7efcba41b84825a379cce86e486cf6aff9285be0ccf8"},
   "erlex": {:hex, :erlex, "0.2.6", "c7987d15e899c7a2f34f5420d2a2ea0d659682c06ac607572df55a43753aa12e", [:mix], [], "hexpm", "2ed2e25711feb44d52b17d2780eabf998452f6efda104877a3881c2f8c0c0c75"},
@@ -38,5 +38,5 @@
   "riak_pb": {:hex, :riak_pb, "2.3.2", "48ffbf66dbb3f136ab9a7134bac4e496754baa5ef58c4f50a61326736d996390", [:make, :mix, :rebar3], [{:hamcrest, "~> 0.4.1", [hex: :basho_hamcrest, repo: "hexpm", optional: false]}], "hexpm", "7c0644bcba8a423dd9c1ab85b6e7ff4df0712d8a350f9698647cff1996f0348c"},
   "riakc": {:hex, :riakc, "2.5.3", "6132d9e687a0dfd314b2b24c4594302ca8b55568a5d733c491d8fb6cd4004763", [:make, :mix, :rebar3], [{:riak_pb, "~> 2.3", [hex: :riak_pb, repo: "hexpm", optional: false]}], "hexpm", "32b3aced7b749bffd917153f68fa73c184b09b70ea6f37867db43dba273127bf"},
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm", "c790593b4c3b601f5dc2378baae7efaf5b3d73c4c6456ba85759905be792f2ac"},
-  "wizard": {:git, "git@gitlab.aeon.world:tools/wizard.git", "099f2777c31ef80497457aac8b9825fd03503cda", [branch: "dev"]},
+  "wizard": {:git, "git@gitlab.aeon.world:tools/wizard.git", "2563421495c137839295a60c01e750b6b1721cc9", [branch: "dev"]},
 }

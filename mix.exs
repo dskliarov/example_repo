@@ -15,7 +15,7 @@ defmodule Meta.Saga.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :distributed_lib ],
+      extra_applications: [:logger, :distributed_lib, :wizard],
       mod: {Meta.Saga.Application, []}
     ]
   end
@@ -29,8 +29,7 @@ defmodule Meta.Saga.MixProject do
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
       {:helper, git: "git@gitlab.aeon.world:tools/helper.git", branch: "dev"},
-#      {:distributed_lib, path: "/Users/dskliarov/erlang_projects/distributed_lib"},
-      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
+      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "dev"},
 
       # Devops dependencies
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},

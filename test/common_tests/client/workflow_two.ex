@@ -9,6 +9,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   alias Meta.Saga.Test.Client.Helper
 
   @step_timeout 200
+  @saga_timeout 6_0000
   @initialize "initialize"
   @step1 "step1"
   @step2 "step2"
@@ -32,7 +33,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   def expected_history(),
     do: [@initialize, @step1, @step2, @step3, @step4, @last_step, @stop]
 
-  def exec_saga(), do: GenServer.call(name(), :exec_saga)
+  def exec_saga(), do: GenServer.call(name(), :exec_saga, @saga_timeout)
 
   def process(id, event, saga, metadata) do
     GenServer.cast(name(), {:process, id, event, saga, metadata})

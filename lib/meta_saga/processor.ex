@@ -1,7 +1,7 @@
 defmodule Meta.Saga.Processor do
 
   alias DistributedLib.Processor.MessageHandler
-  alias Meta.Saga.{Cron, Repo.Saga, Repo.Owner}
+  alias Meta.Saga.{Aeon.Entities, Aeon.Services, Cron}
 
   @behaviour MessageHandler
 
@@ -67,7 +67,7 @@ defmodule Meta.Saga.Processor do
 
   @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
   def get_saga(id, metadata \\ []) do
-    with {:ok, [{_id, saga}]} <- Saga.core_read(id, %{metadata: metadata}) do
+    with {:ok, [{_id, saga}]} <- Entities.Saga.core_read(id, %{metadata: metadata}) do
       {:ok, saga}
       else
         {:ok, []} ->
@@ -83,7 +83,7 @@ defmodule Meta.Saga.Processor do
   #
   #########################################################
 
-  @spec handle(saga_id(), distributed_message(), keyword()) :: :ok | Owner.result()
+  @spec handle(saga_id(), distributed_message(), keyword()) :: :ok | Services.Owner.result()
   @impl MessageHandler
   def handle(id, {{id, state}, event, metadata}, opts),
     do: handle(id, {state, event, metadata}, opts)
@@ -94,17 +94,17 @@ defmodule Meta.Saga.Processor do
   def handle(id, {%{"owner" => owner} = saga_payload, event, metadata}, _opts) do
     case dispatch_event(saga_payload, event) do
       {:error, %{"state" => state}} ->
-        Owner.execute(id, state, :error, owner, metadata)
+        Services.Owner.execute(id, state, :error, owner, metadata)
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
-        {:ok, "ok"} = Owner.execute(id, state, current_event, owner, metadata)
+        {:ok, "ok"} = Services.Owner.execute(id, state, current_event, owner, metadata)
         Cron.add_execute_timeout(id, process_timeout)
         :ok
       {:idle, saga_payload1, idle_timeout} ->
-        {:ok, _} = Saga.core_write(id, saga_payload1, %{metadata: metadata})
+        {:ok, _} = Entities.Saga.core_write(id, saga_payload1, %{metadata: metadata})
         :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
-        {:ok, _} = Saga.core_write(id, saga_payload1, %{metadata: metadata})
+        {:ok, _} = Entities.Saga.core_write(id, saga_payload1, %{metadata: metadata})
       {:stop, saga_payload1} ->
         :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
       {:ignore, _state} ->
@@ -120,9 +120,9 @@ defmodule Meta.Saga.Processor do
 
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
-    with {:ok, _} <- Saga.core_write(id, saga_payload, %{metadata: metadata}),
+    with {:ok, _} <- Entities.Saga.core_write(id, saga_payload, %{metadata: metadata}),
          :ok <- Cron.delete_timeout(id),
-         {:ok, "ok"} <- Owner.execute(id, state, "stop", owner, metadata),
+         {:ok, "ok"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
       do: :ok
   end
 

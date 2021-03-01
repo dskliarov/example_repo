@@ -35,7 +35,9 @@ defmodule Meta.Saga.Cron do
   def add_timeout(task, id, timeout) do
     system_time = :os.system_time(:millisecond)
     timestamp = system_time + timeout
-    Scheduler.add_schedule(id, timestamp, task)
+
+    with {:ok, _id} <- Scheduler.add_schedule(id, timestamp, task),
+      do: :ok
   end
 
   @spec delete_timeout(saga_id()) :: :ok
