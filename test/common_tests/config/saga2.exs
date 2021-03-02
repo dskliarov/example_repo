@@ -1,14 +1,18 @@
 import Config
 
+config :saga2,
+  conn_opts: [{{:system, "AEON_ETCD_SERVICE_HOST"},
+               {:system, "AEON_ETCD_SERVICE_PORT"}}]
+
 config :wizard,
-       transports: [
-         {GrpcTransport, codec: Codec.Identity},
-         {RabbitTransport, codec: Codec.Etf}
-       ]
+  transports: [
+    {GrpcTransport, codec: Codec.Identity},
+    {RabbitTransport, codec: Codec.Etf}
+  ]
 
 config :grpc_transport,
-       listen: {'0.0.0.0', 9001}
+  listen: {'0.0.0.0', 9001}
 
 config :rabbit_transport,
-       conn_opts: {{:system, "AEON_RABBITMQ_SERVICE_HOST"},
-         {:system, "AEON_RABBITMQ_SERVICE_PORT"}}
+  conn_opts: {{:system, "AEON_RABBITMQ_SERVICE_HOST"},
+              {:system, "AEON_RABBITMQ_SERVICE_PORT"}}

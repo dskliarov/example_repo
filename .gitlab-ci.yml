@@ -7,7 +7,7 @@ stages:
 
 variables:
   KUBECONFIG: /etc/deploy/config
-  SERVICENAME: svc-meta-saga
+  SERVICENAME: svc-meta-saga-v2
   TIMEOUT: "30s"
 
 test:

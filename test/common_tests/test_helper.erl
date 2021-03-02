@@ -71,12 +71,16 @@ stop_services() ->
 
 load_env_variables() ->
     load_env_variables_riak(),
+    load_env_variables_etcd(),
     load_env_variables_service("CORE", "9000"),
     load_env_variables_service("SAGA2", "9001"),
     load_env_variables_service("TEST_SAGA", "9002").
 
 load_env_variables_riak() ->
     load_env_variables_paires("AEON_RIAK_SERVICE", "8087").
+
+load_env_variables_etcd() ->
+    load_env_variables_paires("AEON_ETCD_SERVICE", "2379").
 
 load_env_variables_service(Service, Port) ->
     Prefix = service_env_var_prefix(Service),

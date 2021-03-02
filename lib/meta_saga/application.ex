@@ -7,7 +7,7 @@ defmodule Meta.Saga.Application do
 
   def start(_type, _args) do
     children = [
-      Meta.Saga.Endpoint.child_spec([])
+      Meta.Saga.Aeon.Endpoint.child_spec([])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

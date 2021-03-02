@@ -1,5 +1,9 @@
 import Config
 
+config :saga2,
+  conn_opts: [{{:system, "AEON_ETCD_SERVICE_HOS"},
+               {:system, "AEON_ETCD_SERVICE_PORT"}}]
+
 config :wizard,
   transports: [
     {GrpcTransport, codec: Codec.Identity},

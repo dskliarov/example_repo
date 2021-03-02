@@ -1,5 +1,8 @@
 import Config
 
+config :saga2,
+  conn_opts: [{'127.0.0.1', 2379}]
+
 config :wizard,
   transports: [
     {GrpcTransport, codec: Codec.Identity},
