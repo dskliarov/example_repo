@@ -10,6 +10,8 @@ defmodule Meta.Saga.Test.Saga do
   @process_timeout 2_000
   @retry_counter 3
 
+  @moduledoc false
+
   #########################################################
   #
   #   API

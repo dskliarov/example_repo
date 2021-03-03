@@ -1,15 +1,20 @@
 defmodule Meta.Saga.Test.WorkflowTwo do
   use GenServer
 
+  @moduledoc """
+  Test Saga. Happy path, sending `process` command to saga service
+  in callback
+  """
+
   #########################################################
   #   Example Saga - Happy Path                           #
   #########################################################
 
-  alias Meta.Saga.Test.{Saga, Utility}
   alias Meta.Saga.Test.Client.Helper
+  alias Meta.Saga.Test.{Saga, Utility}
 
   @step_timeout 200
-  @saga_timeout 6_0000
+  @saga_timeout 10_000
   @initialize "initialize"
   @step1 "step1"
   @step2 "step2"
@@ -24,16 +29,16 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   #
   #########################################################
 
-  def start_link(),
+  def start_link,
     do: GenServer.start_link(__MODULE__, [], name: name())
 
-  def stop(),
+  def stop,
     do: GenServer.stop(name())
 
-  def expected_history(),
+  def expected_history,
     do: [@initialize, @step1, @step2, @step3, @step4, @last_step, @stop]
 
-  def exec_saga(), do: GenServer.call(name(), :exec_saga, @saga_timeout)
+  def exec_saga, do: GenServer.call(name(), :exec_saga, @saga_timeout)
 
   def process(id, event, saga, metadata) do
     GenServer.cast(name(), {:process, id, event, saga, metadata})
@@ -113,7 +118,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   #
   #########################################################
 
-  defp init_saga() do
+  defp init_saga do
     %{
       "id" => Utility.new_id(),
       "current_step" => "initialize",
@@ -121,7 +126,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
     }
   end
 
-  defp initial_state(),
+  defp initial_state,
     do: %{
           "saga_id" => nil,
           "current_step" => nil,
@@ -180,6 +185,6 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   defp update_state(state, %{"id" => id, "current_step" => step}, metadata),
     do: %{state|"saga_id" => id, "current_step" => step, "metadata" => metadata}
 
-  defp name(), do: {:global, __MODULE__}
+  defp name, do: {:global, __MODULE__}
 
 end

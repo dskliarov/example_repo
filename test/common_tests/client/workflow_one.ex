@@ -1,6 +1,10 @@
 defmodule Meta.Saga.Test.WorkflowOne do
   use GenServer
 
+  @moduledoc """
+  Test Saga. Happy path, sending `process` command directly to saga service
+  """
+
   #########################################################
   #   Example Saga - Happy Path                           #
   #########################################################
@@ -8,7 +12,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   alias Meta.Saga.Test.{Saga, Utility}
 
   @step_timeout 500
-  @saga_timeout 2_0000
+  @saga_timeout 20_000
   @initialize "initialize"
   @step1 "step1"
   @step2 "step2"
@@ -23,16 +27,16 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #
   #########################################################
 
-  def start_link(),
+  def start_link,
     do: GenServer.start_link(__MODULE__, [], name: name())
 
-  def stop(),
+  def stop,
     do: GenServer.stop(name())
 
-  def expected_history(),
+  def expected_history,
     do: [@initialize, @step1, @step2, @step3, @step4, @last_step, @stop]
 
-  def exec_saga(), do: GenServer.call(name(), :exec_saga, @saga_timeout)
+  def exec_saga, do: GenServer.call(name(), :exec_saga, @saga_timeout)
 
   def process(id, event, saga, metadata) do
     GenServer.cast(name(), {:process, id, event, saga, metadata})
@@ -112,7 +116,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #
   #########################################################
 
-  defp init_saga() do
+  defp init_saga do
     %{
       "id" => Utility.new_id(),
       "current_step" => "initialize",
@@ -120,7 +124,7 @@ defmodule Meta.Saga.Test.WorkflowOne do
     }
   end
 
-  defp initial_state(),
+  defp initial_state,
     do: %{
           "saga_id" => nil,
           "current_step" => nil,
@@ -179,6 +183,6 @@ defmodule Meta.Saga.Test.WorkflowOne do
   defp update_state(state, %{"id" => id, "current_step" => step}, metadata),
     do: %{state|"saga_id" => id, "current_step" => step, "metadata" => metadata}
 
-  defp name(), do: {:global, __MODULE__}
+  defp name, do: {:global, __MODULE__}
 
 end

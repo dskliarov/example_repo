@@ -1,6 +1,8 @@
 defmodule Meta.Saga.Test.Utility do
 
-  def new_id() do
+  @moduledoc false
+
+  def new_id do
     length = 15
     length
     |> :crypto.strong_rand_bytes()

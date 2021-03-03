@@ -1,5 +1,9 @@
 defmodule Meta.Saga.Processor do
 
+  @moduledoc """
+  Saga event processor
+  """
+
   alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.{Aeon.Entities, Aeon.Services, Cron}
 
@@ -22,7 +26,7 @@ defmodule Meta.Saga.Processor do
   @type saga_id :: binary()
   @type event :: binary()
   @type metadata :: keyword()
-  @type data :: map()
+  @type data :: map() | binary()
   @type uri :: binary()
   @type queue :: tuple()
   @type saga_payload :: map()
@@ -67,10 +71,10 @@ defmodule Meta.Saga.Processor do
 
   @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
   def get_saga(id, metadata \\ []) do
-    with {:ok, [{_id, saga}]} <- Entities.Saga.core_read(id, %{metadata: metadata}) do
-      {:ok, saga}
-      else
-        {:ok, []} ->
+    case Entities.Saga.core_read(id, %{metadata: metadata}) do
+      {:ok, [{_id, saga}]} ->
+        {:ok, saga}
+      {:ok, []} ->
           {:error, :not_found}
       error ->
           error

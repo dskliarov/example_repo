@@ -1,5 +1,7 @@
 defmodule Meta.Saga.Cron do
 
+  @moduledoc "Cron jobs helper"
+
   alias DistributedLib.Cron.Scheduler
   alias Meta.Saga.Processor
 

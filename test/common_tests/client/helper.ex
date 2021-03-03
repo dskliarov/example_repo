@@ -1,4 +1,7 @@
 defmodule Meta.Saga.Test.Client.Helper do
+
+  @moduledoc false
+
   alias Wizard.Client
 
   @to "rpc://svc.meta.test_saga.remote_service_response_emulator"

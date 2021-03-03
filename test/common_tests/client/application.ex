@@ -27,7 +27,7 @@ defmodule Meta.Saga.Test.Client.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def ensure_compiled() do
+  def ensure_compiled do
     Code.ensure_compiled(Enum)
     Code.ensure_compiled(Atom)
     Code.ensure_compiled(Enumerable)

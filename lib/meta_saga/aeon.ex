@@ -1,6 +1,11 @@
 defmodule Meta.Saga.Aeon do
 
+  @moduledoc "Inter-cervice communication setup"
+
   defmodule Endpoint do
+
+    @moduledoc "Wizard Endpoint setup"
+
     use Wizard.Endpoint, service: :saga2, type: :svc, namespace: :meta
 
     alias Meta.Saga.CommandHandlers.Handler
@@ -12,10 +17,15 @@ defmodule Meta.Saga.Aeon do
   end
 
   defmodule Entities.Saga do
+
+    @moduledoc "Saga Entity setup"
+
     use Helper.Core, type: :saga
   end
 
   defmodule Services.Owner do
+
+    @moduledoc "Communication with owners services"
 
     alias Wizard.Client
 

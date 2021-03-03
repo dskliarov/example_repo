@@ -5,9 +5,11 @@ defmodule Meta.Saga.Application do
 
   use Application
 
+  alias Meta.Saga.Aeon.Endpoint
+
   def start(_type, _args) do
     children = [
-      Meta.Saga.Aeon.Endpoint.child_spec([])
+      Endpoint.child_spec([])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

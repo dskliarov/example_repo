@@ -4,6 +4,8 @@ defmodule Meta.Saga.Test.Client.Handler do
 
   @saga "svc.meta.test_saga."
 
+  @moduledoc false
+
   #########################################################
   #
   #   Handler

@@ -1,5 +1,7 @@
 defmodule Meta.Saga.CommandHandlers.Handler do
 
+  @moduledoc "Message handler module"
+
   alias Meta.Saga.Processor
 
   require Logger
