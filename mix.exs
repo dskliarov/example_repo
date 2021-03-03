@@ -15,7 +15,7 @@ defmodule Meta.Saga.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :distributed_lib ],
+      extra_applications: [:logger, :distributed_lib, :wizard],
       mod: {Meta.Saga.Application, []}
     ]
   end
@@ -28,13 +28,15 @@ defmodule Meta.Saga.MixProject do
       {:grpc_transport, git: "git@gitlab.aeon.world:tools/grpc_transport.git", branch: "dev"},
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
-      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
+      {:helper, git: "git@gitlab.aeon.world:tools/helper.git", branch: "dev"},
+      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "dev"},
 
       # Devops dependencies
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:test_saga, path: "test/common_tests/client", runtime: false},
-      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "dev", runtime: false}
+      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "default_backend", runtime: false},
+      {:redbug, git: "https://github.com/massemanet/redbug.git"}
     ]
   end
 

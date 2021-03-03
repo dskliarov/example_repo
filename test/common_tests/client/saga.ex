@@ -2,11 +2,15 @@ defmodule Meta.Saga.Test.Saga do
 
   alias Wizard.Client
 
-  @owner "svc.meta.test_saga"
+  @owner "svc.meta.test_saga.response"
   @saga "svc.meta.saga2"
+  @idle ".idle"
+  @process ".process"
   @idle_timeout 3_000
   @process_timeout 2_000
   @retry_counter 3
+
+  @moduledoc false
 
   #########################################################
   #
@@ -14,27 +18,16 @@ defmodule Meta.Saga.Test.Saga do
   #
   #########################################################
 
-  def idle(id, saga, metadata) do
+  def idle(id, saga, metadata, options \\ []) do
     :idle
-    |> payload(id, saga)
-    |> args(metadata)
-    |> Client.exec()
+    |> payload(id, saga, options)
+    |> exec(@idle, metadata)
   end
 
-  def process(id, event, metadata) do
+  def process(id, event, metadata, saga \\ nil) do
     :process
-    |> payload(id, event)
-    |> exec(metadata)
-  end
-
-  def process(id, event, metadata) do
-    process(id, event, nil, metadata)
-  end
-
-  def process(id, event, data, metadata) do
-    :process
-    |> payload(id, event, data)
-    |> exec(metadata)
+    |> payload(id, event, saga)
+    |> exec(@process, metadata)
   end
 
   def idle_timeout, do: @idle_timeout
@@ -47,27 +40,32 @@ defmodule Meta.Saga.Test.Saga do
   #
   #########################################################
 
-  defp exec(payload, metadata) do
+  defp exec(payload, action, metadata) do
     payload
-    |> args(metadata)
+    |> args(action, metadata)
     |> Client.exec()
+    |> execution_result_log(payload, action)
   end
 
-  defp args(payload, metadata) do
+  defp execution_result_log(result, payload, action) do
+    :ct.log('Send action: ~p for saga: ~p with result ~p~n',
+      [action, payload, result])
+    result
+  end
+
+  defp args(payload, action, metadata) do
     [
-      to: "rpc://" <> @saga,
+      to: "rpc://" <> @saga <> action,
       payload: payload,
       metadata: metadata
     ]
   end
 
-  defp payload(:idle, id, saga) do
+  defp payload(:idle, id, saga, options) do
     %{
       "id" => id,
       "owner" => @owner,
-      "state" => %{
-        "state" => Map.merge(saga, options())
-      }
+      "state" => Map.merge(saga, options(options))
     }
   end
 
@@ -78,19 +76,19 @@ defmodule Meta.Saga.Test.Saga do
     }
   end
 
-  defp payload(:process, id, event, data) do
+  defp payload(:process, id, event, saga) do
     %{
       "id" => id,
       "event" => event,
-      "data" => data
+      "state" => saga
     }
   end
 
-  defp options() do
+  defp options(options) do
     %{"options" => %{
-      "idle_timeout" => @idle_timeout,
-      "process_timeout" => @process_timeout,
-      "retry_counter" => @retry_counter
+      "idle_timeout" => Keyword.get(options, :idle_timeout, @idle_timeout),
+      "process_timeout" => Keyword.get(options, :process_timeout, @process_timeout),
+      "retry_counter" => Keyword.get(options, :retry_counter, @retry_counter)
     }}
   end
 

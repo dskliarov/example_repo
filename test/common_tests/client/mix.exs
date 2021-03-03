@@ -15,7 +15,7 @@ defmodule Meta.Saga.Test.Client.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :common_test, :wizard],
       mod: {Meta.Saga.Test.Client.Application, []}
     ]
   end
@@ -28,10 +28,8 @@ defmodule Meta.Saga.Test.Client.MixProject do
       {:grpc_transport, git: "git@gitlab.aeon.world:tools/grpc_transport.git", branch: "dev"},
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
-      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "pseudo-async_call"},
-      # Devops dependencies
-      {:dialyxir,         "~> 1.0", only: [:dev, :test], runtime: false},
-      {:credo,            "~> 1.4", only: [:dev, :test], runtime: false}
+      {:helper, git: "git@gitlab.aeon.world:tools/helper.git", branch: "dev"},
+      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "dev"},
     ]
   end
 

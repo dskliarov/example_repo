@@ -9,6 +9,7 @@
          stop_app_on_nodes/1,
          start_nodes/2,
          start_client_node/2,
+         start_core_node/2,
          start_node/2,
          start_app/1,
          stop_app/1,
@@ -18,19 +19,23 @@
          rpc_call/7,
          format/2,
          find_ring_node/2,
-         ring_nodes/1
+         ring_nodes/1,
+         log/2
         ]).
 
 -export([
          start_deps/0,
-         start_core/0,
          stop_deps/0,
-         stop_core/0,
          load_env_variables/0
         ]).
 
 -export([
          start_app_remote/3
+        ]).
+
+-export([
+         prelude/0,
+         postlude/0
         ]).
 
 -export([
@@ -45,45 +50,37 @@
 -define(SCHEDULER, 'Elixir.DistributedLib.Cron.Scheduler').
 -define(DISTRIBUTED_LIB, 'Elixir.DistributedLib').
 -define(DEFAULT_MAP, {0, sets:new()}).
+-define(ELIXIR_CONFIG, 'Elixir.Config.Reader').
+-define(ELIXIR_APP, 'Elixir.Application').
 %%--------------------------------------------------------------------
 %%  etcd
 %%--------------------------------------------------------------------
 start_deps() ->
-    start_service("rabbitmq etcd riak_coordinator riak_member").
-
-start_core() ->
-    start_service("meta_core", "service").
+    start_service("rabbitmq etcd").
 
 stop_deps() ->
     stop_services().
 
-stop_core() ->
-    stop_services("meta_core").
-
 start_service(Service) ->
     Command = up_command(Service),
-    exec_os_command(Command).
-
-start_service(ProjectName, Service) ->
-    Command = up_command(ProjectName, Service),
     exec_os_command(Command).
 
 stop_services() ->
     Command = down_command(),
     exec_os_command(Command).
 
-stop_services(ProjectName) ->
-    Command = down_command(ProjectName),
-    exec_os_command(Command).
-
 load_env_variables() ->
     load_env_variables_riak(),
+    load_env_variables_etcd(),
     load_env_variables_service("CORE", "9000"),
     load_env_variables_service("SAGA2", "9001"),
     load_env_variables_service("TEST_SAGA", "9002").
 
 load_env_variables_riak() ->
     load_env_variables_paires("AEON_RIAK_SERVICE", "8087").
+
+load_env_variables_etcd() ->
+    load_env_variables_paires("AEON_ETCD_SERVICE", "2379").
 
 load_env_variables_service(Service, Port) ->
     Prefix = service_env_var_prefix(Service),
@@ -123,6 +120,7 @@ start_app(Application, Node) when is_atom(Node) ->
     log("Starting node ~s~n", [Node1]),
     Options = app_options(),
     StartResult = ct_slave:start(Node1, Options),
+    log("NODES ~p",[net_adm:names()]),
     log("Node ~p start result: ~p~n", [Node1, StartResult]),
     Node2 = node_from_result(StartResult),
     start_app_remote(Application, Node2),
@@ -142,6 +140,7 @@ stop_app1(Node) when is_atom(Node)->
 %%--------------------------------------------------------------------
 %%  Private functions
 %%--------------------------------------------------------------------
+
 node_name(Node) ->
     case persistent_term:get(Node, nil) of
         nil ->
@@ -180,23 +179,12 @@ docker_command(Command) ->
     ComposeFile = compose_file(),
     format("docker-compose -f ~s ~s", [ComposeFile, Command]).
 
-docker_command(ProjectName, Command) ->
-    ComposeFile = compose_file(ProjectName),
-    format("docker-compose -f ~s ~s", [ComposeFile, Command]).
-
 up_command(Service) ->
     Command = format("up -d --remove-orphans ~s", [Service]),
     docker_command(Command).
 
-up_command(ProjectName, Service) ->
-    Command = format("up -d --remove-orphans ~s", [Service]),
-    docker_command(ProjectName, Command).
-
 down_command() ->
     docker_command("down").
-
-down_command(ProjectName) ->
-    docker_command(ProjectName, "down").
 
 log(String) ->
     log("~s~n", [String]).
@@ -209,15 +197,6 @@ exec_os_command(Command) ->
 compose_file() ->
     path(?COMPOSE_FILE).
 
-compose_file(ProjectName) ->
-    Prefix = format("deps/~s", [ProjectName]),
-    path(Prefix, ?COMPOSE_FILE).
-
-project_directory() ->
-    FilePath = code:which(?MODULE),
-    [ProjectDirectory|_] = string:split(FilePath, "saga2"),
-    format("~ssaga2", [ProjectDirectory]).
-
 project_root_directory() ->
     FilePath = code:which(?MODULE),
     [ProjectDirectory|_] = string:split(FilePath, "test"),
@@ -227,11 +206,11 @@ project_root_directory() ->
 erl_app_dir(LibDirectory, Application) ->
     format("-pa ~s/~s/ebin/", [LibDirectory, Application]).
 
-erl_elixir_dir(Dir) ->
-    FilePath = code:which('Elixir.Kernel'),
+erl_elixir_dir(Dir1) ->
+    FilePath = os:cmd("elixir -e ':code.which(Elixir.Kernel)|> IO.write()'"),
     Dir = filename:dirname(FilePath),
     [ElixirInstallDir|_] = string:split(Dir, "bin"),
-    format("-pa ~s~s~s", [ElixirInstallDir, "lib", Dir]).
+    format("-pa ~s", [filename:join([ElixirInstallDir, "lib", Dir1])]).
 
 erl_elixir_dir() ->
     ElixirDir = erl_elixir_dir(?ELIXIR_BIN_DIR),
@@ -279,11 +258,11 @@ applications_to_start(Application) when is_atom(Application) ->
 log_rpc_call_result(_OperationDescription, _Node, Result, false) ->
     Result;
 log_rpc_call_result(OperationDescription, Node, Result, _) ->
-    log("The result of ~s on node ~p is ~p", [OperationDescription, Node, Result]),
+    log("The result of ~s on node ~p is ~p~n~n", [OperationDescription, Node, Result]),
     Result.
 
 rpc_call(Node, Module, Function) ->
-    rpc_call(Node, Module, Function).
+    rpc_call(Node, Module, Function, []).
 
 rpc_call(Node, Module, Function, Arguments) ->
     Node1 = node_name(Node),
@@ -302,6 +281,18 @@ rpc_call(Node, Module, Function, Arguments, OperationDescription, ProcessPrint) 
     log_rpc_call_result(OperationDescription, Node1, Result, ProcessPrint).
 
 start_app_remote(Application, Node) ->
+    PathToConfig  = get_config_path(atom_to_list(Application)),
+    log("Path to config file ~p",[PathToConfig]),
+    Config = rpc_call(Node, ?ELIXIR_CONFIG, 'read!', [PathToConfig],
+                  "application ~p read config~n", [Application], false),
+    log("Read config result ~p",[Config]),
+    Config1 = rpc_call(Node, ?ELIXIR_APP, put_all_env, [Config],
+                   "application ~p load env~n", [Application], false),
+    log("Load environment result ~p~n",[Config1]),
+    Config2 = rpc_call(Node, ?ELIXIR_APP, get_all_env, [Application],
+                       "application ~p read env~n", [Application], false),
+    log("Read environment result ~p~n",[Config2]),
+
     Applications = applications_to_start(Application),
     start_app_remote(Node, Applications, []).
 
@@ -322,16 +313,19 @@ start_nodes([Node|Nodes], Acc) ->
     start_nodes(Nodes, Acc1).
 
 start_node(Node, Acc) ->
-    start_node(saga2, Node, Acc).
+    start_node(saga2, Node, Acc, true).
 
 start_client_node(Node, Acc) ->
-    start_node(test_saga, Node, Acc).
+    start_node(test_saga, Node, Acc, false).
 
-start_node(Application, Node, Acc) ->
+start_core_node(Node, Acc) ->
+    start_node(core, Node, Acc, false).
+
+start_node(Application, Node, Acc, EnableDistributedLib) ->
     Node1 = start_app(Application, Node),
-    wait_for_node(Node1),
-    wait_for_ready(Node1),
-    {ok, NodeId} = node_id(Node1),
+    wait_for_node(Node1, Application),
+    exec_ready_wait(Node, EnableDistributedLib),
+    {ok, NodeId} = node_id(Node1, EnableDistributedLib),
     Acc1 = maps:put(Node, NodeId, Acc),
     Acc2 = maps:put(NodeId, Node, Acc1),
     Acc3 = maps:put(Node1, NodeId, Acc2),
@@ -347,18 +341,30 @@ ring_nodes(Node) ->
     rpc_call(Node, ?HASH_RING, ring_nodes, []).
 
 node_id(Node) ->
-    rpc_call(Node, ?HASH_RING, local_node_id, []).
+    node_id(Node, true).
+
+node_id(Node, true) ->
+    rpc_call(Node, ?HASH_RING, local_node_id, []);
+
+node_id(Node, _EnableDistributedLib) ->
+    {ok, Node}.
 
 timestamp(TimeSpanSeconds) ->
     os:system_time(millisecond) + TimeSpanSeconds.
 
-wait_for_node_delayed(Node) ->
+wait_for_node_delayed(Node, Application) ->
     timer:sleep(2000),
-    wait_for_node(Node).
+    wait_for_node(Node, Application).
 
 wait_for_ready_delayed(Node, Counter) ->
     timer:sleep(2000),
     wait_for_ready(Node, Counter - 1).
+
+exec_ready_wait(Node, true) ->
+    wait_for_ready(Node);
+exec_ready_wait(_Node, _) ->
+    ok.
+
 
 wait_for_ready(Node) ->
     wait_for_ready(Node, 10).
@@ -375,40 +381,36 @@ wait_for_ready(Node, Counter) ->
             wait_for_ready_delayed(Node, Counter)
     end.
 
-wait_for_node(Node) ->
+wait_for_node(Application, Node) ->
     Nodes = nodes(),
     case lists:member(Node, Nodes) of
         true ->
-            is_application_started(distributed_lib, Node);
+            is_application_started(Application, Node);
         false ->
-            wait_for_node_delayed(Node)
+            wait_for_node_delayed(Node, Application)
     end.
 
 is_application_started(Application, Node) ->
     case rpc_call(Node, application, which_applications, []) of
         {badrpc, nodedown} ->
-            wait_for_node_delayed(Node);
+            wait_for_node_delayed(Node, Application);
         Applications ->
             StartedDistributedLib = lists:any(
                                        fun(AppTuple) ->
                                                is_app_started(AppTuple, Application)
                                        end, Applications),
-            wait_for_node(StartedDistributedLib, Applications)
+            check_node_status(StartedDistributedLib, Applications, Application)
     end.
 
-wait_for_node(true, _Node) ->
+check_node_status(true, _Node, _Application) ->
     ok;
-wait_for_node(_NotStarted, Node) ->
-    wait_for_node_delayed(Node).
+check_node_status(_NotStarted, Node, Application) ->
+    wait_for_node_delayed(Node, Application).
 
 is_app_started({Application, _Description, _Version}, Application) ->
     true;
 is_app_started(_, _) ->
     false.
-
-path(Prefix, RelativePath) ->
-    RelativePath1 = format("~s/~s", [Prefix, RelativePath]),
-    path(RelativePath1).
 
 path("deps/" ++ _ = RelativePath) ->
     ProjectDirectory = project_root_directory(),
@@ -424,3 +426,25 @@ format(FormatString, Data) ->
 
 ct_run() ->
     ct:run("test/common_tests/", saga_SUITE).
+
+get_config_path(Name) ->
+    RootDir = project_root_directory(),
+    ConfigDir = "config",
+    list_to_binary(filename:join([RootDir, "test", "common_tests",  ConfigDir, Name ++ ".exs"])).
+
+prelude() ->
+    prelude([dev1], saga_client).
+
+prelude(Nodes, SagaNode) ->
+    prelude(Nodes, SagaNode, #{}).
+
+prelude(Nodes, SagaNode, Acc) ->
+    load_env_variables(),
+    start_deps(),
+    Acc1 = start_nodes(Nodes, Acc),
+    Acc2 = start_core_node(core, Acc1),
+    start_client_node(SagaNode, Acc2).
+
+postlude() ->
+    stop_deps(),
+    stop_app_on_nodes().

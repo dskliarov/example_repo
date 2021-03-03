@@ -1,18 +1,20 @@
-defmodule Meta.Saga.Test.WorkflowOne do
+defmodule Meta.Saga.Test.WorkflowTwo do
   use GenServer
 
   @moduledoc """
-  Test Saga. Happy path, sending `process` command directly to saga service
+  Test Saga. Happy path, sending `process` command to saga service
+  in callback
   """
 
   #########################################################
   #   Example Saga - Happy Path                           #
   #########################################################
 
+  alias Meta.Saga.Test.Client.Helper
   alias Meta.Saga.Test.{Saga, Utility}
 
-  @step_timeout 500
-  @saga_timeout 20_000
+  @step_timeout 200
+  @saga_timeout 10_000
   @initialize "initialize"
   @step1 "step1"
   @step2 "step2"
@@ -98,18 +100,18 @@ defmodule Meta.Saga.Test.WorkflowOne do
   #########################################################
 
   @impl GenServer
-  def handle_info(:timeout, %{"saga_id" => id,
-                              "current_step" => step,
+  def handle_info(:timeout, %{"current_step" => step,
                               "metadata" => metadata} = state) do
     next_step = next_step(step)
     :ct.log(:info, 75, 'Emulate next command: ~p~n', [next_step])
-    {:ok, "ok"} = Saga.process(id, next_step, metadata)
+    {:ok, "assync_submitted"} = Helper.emulate(%{"next_step" => next_step}, metadata)
     {:noreply, state}
   end
 
   def handle_info(_message, state) do
     {:noreply, state, @step_timeout}
   end
+
   #########################################################
   #
   #  Private functions
