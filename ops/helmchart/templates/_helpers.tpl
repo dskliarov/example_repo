@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "svc-meta-saga.name" -}}
+{{- define "svc-meta-saga-v2.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "svc-meta-saga.fullname" -}}
+{{- define "svc-meta-saga-v2.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "svc-meta-saga.chart" -}}
+{{- define "svc-meta-saga-v2.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "svc-meta-saga.labels" -}}
-helm.sh/chart: {{ include "svc-meta-saga.chart" . }}
-{{ include "svc-meta-saga.selectorLabels" . }}
+{{- define "svc-meta-saga-v2.labels" -}}
+helm.sh/chart: {{ include "svc-meta-saga-v2.chart" . }}
+{{ include "svc-meta-saga-v2.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -46,17 +46,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "svc-meta-saga.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "svc-meta-saga.name" . }}
+{{- define "svc-meta-saga-v2.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "svc-meta-saga-v2.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "svc-meta-saga.serviceAccountName" -}}
+{{- define "svc-meta-saga-v2.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "svc-meta-saga.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "svc-meta-saga-v2.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
