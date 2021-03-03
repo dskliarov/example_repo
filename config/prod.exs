@@ -1,7 +1,7 @@
 import Config
 
 config :saga2,
-  conn_opts: [{{:system, "AEON_ETCD_SERVICE_HOS"},
+  conn_opts: [{{:system, "AEON_ETCD_SERVICE_HOST"},
                {:system, "AEON_ETCD_SERVICE_PORT"}}]
 
 config :wizard,
