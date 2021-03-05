@@ -1,8 +1,11 @@
 import Config
 
 config :distributed_lib,
-  conn_opts: [{{:system, "AEON_ETCD_SERVICE_HOST"},
-               {:system, "AEON_ETCD_SERVICE_PORT"}}]
+  conn_opts: [{
+               {:system, "AEON_ETCD_SERVICE_HOST"},
+               {:system, "AEON_ETCD_SERVICE_PORT"}
+               }],
+  etcd_credentials: [name: "root", password: "KKGQKqZZV6"]
 
 config :wizard,
   transports: [

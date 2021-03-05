@@ -24,7 +24,7 @@ defmodule Meta.Saga.Processor do
   @type not_ready_list :: [atom()]
   @type handle_result :: DistributedLib.process_result() | error()
   @type saga_id :: binary()
-  @type event :: binary()
+  @type event :: binary() | {binary(), term()}
   @type metadata :: keyword()
   @type data :: map() | binary()
   @type uri :: binary()
@@ -64,7 +64,7 @@ defmodule Meta.Saga.Processor do
   def stop(id, metadata),
     do: handle_event(id, "stop", metadata)
 
-  @spec stop(saga_id(), keyword()) :: handle_result()
+  @spec stop(saga_id(), keyword(), term()) :: handle_result()
   def stop(id, metadata, saga) do
     handle_event(id, {"stop", saga}, metadata)
   end
@@ -87,7 +87,7 @@ defmodule Meta.Saga.Processor do
   #
   #########################################################
 
-  @spec handle(saga_id(), distributed_message(), keyword()) :: :ok | Services.Owner.result()
+  @spec handle(saga_id(), distributed_message(), map()) :: :ok | Services.Owner.result()
   @impl MessageHandler
   def handle(id, {{id, state}, event, metadata}, opts),
     do: handle(id, {state, event, metadata}, opts)
