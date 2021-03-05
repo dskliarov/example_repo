@@ -37,7 +37,7 @@ defmodule Meta.Saga.Aeon do
 
     @type saga_id :: binary()
     @type state :: map()
-    @type event :: binary()
+    @type event :: term()
     @type owner :: binary()
     @type metadata :: keyword()
     @type result :: {:ok, term()} | {:error, term()}
