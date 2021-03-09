@@ -71,7 +71,7 @@ defmodule Meta.Saga.Processor do
 
   @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
   def get_saga(id, metadata \\ []) do
-    case Entities.Saga.core_read(id, %{metadata: metadata}) do
+    case Entities.Saga.core_get(id, %{metadata: metadata}) do
       {:ok, [{_id, saga}]} ->
         {:ok, saga}
       {:ok, []} ->
@@ -105,10 +105,10 @@ defmodule Meta.Saga.Processor do
         Cron.add_execute_timeout(id, process_timeout)
         :ok
       {:idle, saga_payload1, idle_timeout} ->
-        {:ok, _} = Entities.Saga.core_write(id, saga_payload1, %{metadata: metadata})
+        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, %{metadata: metadata})
         :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
-        {:ok, _} = Entities.Saga.core_write(id, saga_payload1, %{metadata: metadata})
+        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, %{metadata: metadata})
       {:stop, saga_payload1} ->
         :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
       {:ignore, _state} ->

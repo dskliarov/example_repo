@@ -335,7 +335,7 @@ find_ring_node(Node, Key) ->
     rpc_call(Node, ?HASH_RING, find_ring_node, [Key]).
 
 is_ready(Node) ->
-    rpc_call(Node, ?DISTRIBUTED_LIB, is_ready, []).
+    rpc_call(Node, ?DISTRIBUTED_LIB, check_readiness, []).
 
 ring_nodes(Node) ->
     rpc_call(Node, ?HASH_RING, ring_nodes, []).
