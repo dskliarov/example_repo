@@ -71,14 +71,7 @@ defmodule Meta.Saga.Processor do
 
   @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
   def get_saga(id, metadata \\ []) do
-    case Entities.Saga.core_get(id, %{metadata: metadata}) do
-      {:ok, [{_id, saga}]} ->
-        {:ok, saga}
-      {:ok, []} ->
-          {:error, :not_found}
-      error ->
-          error
-    end
+    Entities.Saga.core_get(id, [], metadata)
   end
 
   #########################################################
@@ -105,10 +98,10 @@ defmodule Meta.Saga.Processor do
         Cron.add_execute_timeout(id, process_timeout)
         :ok
       {:idle, saga_payload1, idle_timeout} ->
-        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, %{metadata: metadata})
+        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, [], metadata)
         :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
-        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, %{metadata: metadata})
+        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, [], metadata)
       {:stop, saga_payload1} ->
         :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
       {:ignore, _state} ->
@@ -124,7 +117,7 @@ defmodule Meta.Saga.Processor do
 
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
-    with {:ok, _} <- Entities.Saga.core_write(id, saga_payload, %{metadata: metadata}),
+    with {:ok, _} <- Entities.Saga.core_put(id, saga_payload, [], metadata),
          :ok <- Cron.delete_timeout(id),
          {:ok, "ok"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
       do: :ok
