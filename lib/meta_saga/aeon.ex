@@ -20,7 +20,9 @@ defmodule Meta.Saga.Aeon do
 
     @moduledoc "Saga Entity setup"
 
-    use Helper.Core, type: :saga
+    use Helper.Core,
+      type: :saga,
+      subset_fields: ["error", "error_history", "events_queue", "owner", "process", "state"]
   end
 
   defmodule Services.Owner do
