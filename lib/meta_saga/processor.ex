@@ -95,8 +95,8 @@ defmodule Meta.Saga.Processor do
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
         {:ok, "ok"} = Services.Owner.execute(id, state, current_event, owner, metadata)
-        Cron.add_execute_timeout(id, process_timeout)
-        :ok
+        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, [], metadata)
+        :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, [], metadata)
         :ok = Cron.add_idle_timeout(id, idle_timeout)
@@ -150,7 +150,7 @@ defmodule Meta.Saga.Processor do
   defp dispatch_event(%{"process" => {
                         current_event,
                         retry_counter
-                        }} = saga_payload, :processor_timeout) do
+                        }} = saga_payload, :process_timeout) do
     retry_counter1 = retry_counter - 1
     saga_payload = %{saga_payload|"process" => {current_event, retry_counter1}}
     process_timeout = process_timeout(saga_payload)

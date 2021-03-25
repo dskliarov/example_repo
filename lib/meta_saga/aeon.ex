@@ -22,7 +22,7 @@ defmodule Meta.Saga.Aeon do
 
     use Helper.Core,
       type: :saga,
-      subset_fields: ["error", "error_history", "events_queue", "owner", "process", "state"]
+      subset_fields: ["error", "error_history", "events_queue", "owner", "process", "state", "id"]
   end
 
   defmodule Services.Owner do
