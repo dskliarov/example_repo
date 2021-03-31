@@ -36,7 +36,8 @@ defmodule Meta.Saga.MixProject do
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:test_saga, path: "test/common_tests/client", runtime: false},
       {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "dev", runtime: false},
-      {:redbug, git: "https://github.com/massemanet/redbug.git"}
+      {:redbug, git: "https://github.com/massemanet/redbug.git"},
+      {:cowlib, "~> 2.10", override: true}
     ]
   end
 

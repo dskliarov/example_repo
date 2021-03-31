@@ -6,7 +6,8 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--define(WORKFLOW, 'Elixir.Meta.Saga.Test.WorkflowOne').
+-define(WORKFLOW_ONE, 'Elixir.Meta.Saga.Test.WorkflowOne').
+-define(WORKFLOW_TWO, 'Elixir.Meta.Saga.Test.WorkflowTwo').
 %%--------------------------------------------------------------------
 %%  COMMON TEST CALLBACK FUNCTIONS
 %%
@@ -115,13 +116,19 @@ saga_happy_path({postlude, _Config}) ->
     ok;
 saga_happy_path(Config) ->
     SagaNode = proplists:get_value(saga_node, Config),
-    workflow_one(SagaNode).
+    workflow_one(SagaNode),
+    workflow_two(SagaNode).
 
 %%--------------------------------------------------------------------
 %% Private functions
 %%--------------------------------------------------------------------
 
 workflow_one(Node) ->
-    SagaResult = test_helper:rpc_call(Node, ?WORKFLOW, exec_saga),
-    ExpectedResult = test_helper:rpc_call(Node, ?WORKFLOW, expected_history),
+    SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_ONE, exec_saga),
+    ExpectedResult = test_helper:rpc_call(Node, ?WORKFLOW_ONE, expected_history),
+    ?assertMatch(ExpectedResult, SagaResult).
+
+workflow_two(Node) ->
+    SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_TWO, exec_saga),
+    ExpectedResult = test_helper:rpc_call(Node, ?WORKFLOW_TWO, expected_history),
     ?assertMatch(ExpectedResult, SagaResult).

@@ -104,7 +104,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
                               "metadata" => metadata} = state) do
     next_step = next_step(step)
     :ct.log(:info, 75, 'Emulate next command: ~p~n', [next_step])
-    {:ok, "assync_submitted"} = Helper.emulate(%{"next_step" => next_step}, metadata)
+    {:ok, "async_submitted"} = Helper.emulate(%{"next_step" => next_step}, metadata)
     {:noreply, state}
   end
 
