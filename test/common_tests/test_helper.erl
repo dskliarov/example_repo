@@ -35,7 +35,8 @@
 
 -export([
          prelude/0,
-         postlude/0
+         postlude/0,
+         test/0
         ]).
 
 -export([
@@ -423,6 +424,11 @@ path(RelativePath) ->
 format(FormatString, Data) ->
     String = io_lib:format(FormatString, Data),
     lists:flatten(String).
+
+test() ->
+    Node = 'dev1@Dmitris-MacBook-Air.local',
+    Workflow =  'Elixir.Meta.Saga.Test.WorkflowOne',
+    test_helper:rpc_call(Node, Workflow, exec_saga).
 
 ct_run() ->
     ct:run("test/common_tests/", saga_SUITE).

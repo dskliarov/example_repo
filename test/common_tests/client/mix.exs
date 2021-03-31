@@ -25,7 +25,7 @@ defmodule Meta.Saga.Test.Client.MixProject do
     [
       # Runtime dependencies
       {:wizard, git: "git@gitlab.aeon.world:tools/wizard.git", branch: "dev"},
-      {:grpc_transport, git: "git@gitlab.aeon.world:tools/grpc_transport.git", branch: "dev"},
+      {:grpc_transport, git: "git@gitlab.aeon.world:tools/grpc_transport_v2.git", branch: "dev"},
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
       {:helper, git: "git@gitlab.aeon.world:tools/helper.git", branch: "dev"},

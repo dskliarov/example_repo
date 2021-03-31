@@ -25,17 +25,17 @@ defmodule Meta.Saga.MixProject do
     [
       # Runtime dependencies
       {:wizard, git: "git@gitlab.aeon.world:tools/wizard.git", branch: "dev"},
-      {:grpc_transport, git: "git@gitlab.aeon.world:tools/grpc_transport.git", branch: "dev"},
+      {:grpc_transport, git: "git@gitlab.aeon.world:tools/grpc_transport_v2.git", branch: "dev"},
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
       {:helper, git: "git@gitlab.aeon.world:tools/helper.git", branch: "dev"},
-      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "dev"},
+      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "prepare_to_release"},
 
       # Devops dependencies
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:test_saga, path: "test/common_tests/client", runtime: false},
-      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "default_backend", runtime: false},
+      {:core, git: "git@gitlab.aeon.world:services/service.meta.core.git", branch: "dev", runtime: false},
       {:redbug, git: "https://github.com/massemanet/redbug.git"}
     ]
   end
