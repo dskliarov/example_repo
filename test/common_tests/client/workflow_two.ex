@@ -14,7 +14,7 @@ defmodule Meta.Saga.Test.WorkflowTwo do
   alias Meta.Saga.Test.{Saga, Utility}
 
   @step_timeout 200
-  @saga_timeout 10_000
+  @saga_timeout 20_000
   @initialize "initialize"
   @step1 "step1"
   @step2 "step2"

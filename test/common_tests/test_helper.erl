@@ -447,6 +447,7 @@ prelude(Nodes, SagaNode) ->
 prelude(Nodes, SagaNode, Acc) ->
     load_env_variables(),
     start_deps(),
+    timer:sleep(2000),
     Acc1 = start_nodes(Nodes, Acc),
     Acc2 = start_core_node(core, Acc1),
     start_client_node(SagaNode, Acc2).
