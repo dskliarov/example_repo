@@ -55,7 +55,7 @@ defmodule Meta.Saga.Processor do
   end
 
   def handle_event(id, event, metadata) do
-    with {:ok, saga} <- get_saga(id) do
+    with {:ok, saga} <- get_saga(id, metadata) do
         DistributedLib.process(id, {saga, event, metadata}, __MODULE__)
     end
   end
@@ -99,6 +99,7 @@ defmodule Meta.Saga.Processor do
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
+        Entities.Saga.core_get(id, metadata)
         :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)

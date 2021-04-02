@@ -15,6 +15,9 @@ config :logger, :console,
     :tag
   ]
 
+config :distributed_lib,
+  watch_topic_prefix: "saga"
+
 if File.exists?("./config/#{Mix.env()}.exs") do
   import_config "#{Mix.env()}.exs"
 end

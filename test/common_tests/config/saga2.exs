@@ -10,6 +10,9 @@ config :wizard,
     {RabbitTransport, codec: Codec.Etf}
   ]
 
+config :distributed_lib,
+  watch_topic_prefix: "saga"
+
 config :grpc_transport,
   listen: {'0.0.0.0', 9001}
 
