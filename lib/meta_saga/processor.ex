@@ -50,14 +50,13 @@ defmodule Meta.Saga.Processor do
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ [])
   def handle_event(%{"id" => id} = data, "idle", metadata) do
-    saga = payload(data)
-    DistributedLib.process(id, {saga, "idle", metadata}, __MODULE__)
+    args = {data, "idle", metadata}
+    DistributedLib.process(id, args, __MODULE__)
   end
 
   def handle_event(id, event, metadata) do
-    with {:ok, saga} <- get_saga(id, metadata) do
-        DistributedLib.process(id, {saga, event, metadata}, __MODULE__)
-    end
+    args = {event, metadata}
+    DistributedLib.process(id, args, __MODULE__)
   end
 
   @spec stop(saga_id(), keyword()) :: handle_result()
@@ -80,15 +79,26 @@ defmodule Meta.Saga.Processor do
   #
   #########################################################
 
-  @spec handle(saga_id(), distributed_message(), map()) :: :ok | Services.Owner.result()
   @impl MessageHandler
-  def handle(id, {{id, state}, event, metadata}, opts),
-    do: handle(id, {state, event, metadata}, opts)
+  def handle(id, {data, "idle", metadata}, _opts) do
+    saga = payload(data)
+    process_saga(id, saga, "idle", metadata)
+  end
 
-  def handle(id, {[state], event, metadata}, opts),
-    do: handle(id, {state, event, metadata}, opts)
+  @impl MessageHandler
+  def handle(id, {event, metadata}, _opts) do
+    with {:ok, saga} <- get_saga(id, metadata),
+      do: process_saga(id, saga, event, metadata)
+  end
 
-  def handle(id, {%{"owner" => owner} = saga_payload, event, metadata}, _opts) do
+  @spec process_saga(saga_id(), saga(), event(), metadata()) :: :ok | Services.Owner.result()
+  def process_saga(id, {id, state}, event, metadata),
+    do: process_saga(id, state, event, metadata)
+
+  def process_saga(id, [state], event, metadata),
+    do: process_saga(id, state, event, metadata)
+
+  def process_saga(id, %{"owner" => owner} = saga_payload, event, metadata) do
     case dispatch_event(saga_payload, event) do
       {:error, %{"state" => state}} ->
         Services.Owner.execute(id, state, :error, owner, metadata)
