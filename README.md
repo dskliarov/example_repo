@@ -153,3 +153,36 @@ The Service accepts following commands:
 
   Wizard.Client.exec(args)
  ```
+## Debugging Saga
+
+run 
+```
+rebar3 as test shell --name test@127.0.0.1 --setcookie aeon
+```
+
+In the shell, to create required environment, run:
+
+This command will start etcd, rabbitmq, core, saga, saga_client services
+
+```
+test_helper:prelude().
+```
+
+to stop running services, run:
+
+```
+test_helper:postlude().
+```
+
+To run test workflow, run:
+
+Sequential workflow
+```
+ saga_SUITE:workflow_one('saga_client@127.0.0.1').
+```
+ 
+ Async workflow (Events to process send to saga service through callbacks):
+ 
+ ```
+ saga_SUITE:workflow_two('saga_client@127.0.0.1').
+ ```

@@ -12,6 +12,9 @@ config :grpc_transport,
 config :rabbit_transport,
   conn_opts: {"localhost", 5672}
 
+config :distributed_lib,
+  watch_topic_prefix: "core"
+
 config :core,
   riak_conn_opts: {"localhost", 8087},
   riak_opts: [security_mode: false],
