@@ -118,7 +118,8 @@ saga_happy_path({postlude, _Config}) ->
 saga_happy_path(Config) ->
     SagaNode = proplists:get_value(saga_node, Config),
     workflow_one(SagaNode),
-    workflow_two(SagaNode).
+    workflow_two(SagaNode),
+    workflow_idle(SagaNode).
 
 %%--------------------------------------------------------------------
 %% Private functions
@@ -136,4 +137,5 @@ workflow_two(Node) ->
 
 workflow_idle(Node) ->
   SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_IDLE, exec_saga),
-  ct:pal("SagaResult ~p~n",[SagaResult]).
+  ct:pal("idle test result ~p~n",[SagaResult]),
+  ?assertMatch({ok, _}, SagaResult).

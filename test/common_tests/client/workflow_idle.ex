@@ -2,7 +2,7 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   use GenServer
 
   @moduledoc """
-  Test Saga. Happy path, sending `process` command directly to saga service
+  Test Saga. Happy path, sending `idle` waiting idle timeout and send process after that  
   """
 
   #########################################################
@@ -11,8 +11,8 @@ defmodule Meta.Saga.Test.WorkflowIdle do
 
   alias Meta.Saga.Test.{Saga, Utility}
 
-  @idle_timeout 1000
-  @process_timeout 500
+  @idle_timeout 2000
+  @process_timeout 1000
   @retry_counter 3
   @some_event "some_event"
 
@@ -28,7 +28,11 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   def stop,
       do: GenServer.stop(name())
 
-    def exec_saga, do: GenServer.call(name(), :idle_saga)
+  def exec_saga, do: GenServer.call(name(), :idle_saga)
+
+  def process(id, event, saga, metadata) do
+    GenServer.cast(name(), {:process, id, event, saga, metadata})
+  end
 
   #########################################################
   #
@@ -46,18 +50,16 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   #########################################################
   #   Call callbacks
   #########################################################
-  def logg(str, data) do
-    File.write("/tmp/bb.log", :erlang.iolist_to_binary(:io_lib.format(str ++ '~n', data)), [:append])
-  end
-
   @impl GenServer
   def handle_call(:idle_saga, from, state) do
     %{"id" => id} = saga = init_saga()
-    {:ok, "ok"} = Saga.idle(id, saga, [], 
-      [idle_timeout: @idle_timeout, process_timeout: @process_timeout, retry_counter: @retry_counter])
-    metadata = [saga_id: id, saga_module: __MODULE__]
-    logg('run workflow idle id ~p saga ~p', [id, saga])
-    {:noreply, %{state|"reply_to" => from, "metadata" => metadata}}
+    {:ok, "ok"} = Saga.idle(
+      id,
+      saga,
+      [],
+      [idle_timeout: @idle_timeout, process_timeout: @process_timeout, retry_counter: @retry_counter]
+    )
+    {:noreply, clean_state(%{state | "reply_to" => from, "metadata" => []})}
   end
 
   #########################################################
@@ -66,21 +68,26 @@ defmodule Meta.Saga.Test.WorkflowIdle do
 
   @impl GenServer
   def handle_cast({:process, id, event, saga, metadata}, %{"reply_to" => reply_to} = state) do
-    logg('Process id: ~p, saga: ~p, event: ~p~n', [id, saga, event])
     :ct.log(:info, 75, 'Process id: ~p, saga: ~p, event: ~p~n', [id, saga, event])
-    case dispatch(event, saga) do
-      {:stop, %{"idle_timeout" => idle, "process_timeout" => process} = new_saga} ->
-        :ct.log(:info, 75, 'Dispatched stop event; idle_timeout: ~p process_timeout~n', [idle, process])
-        GenServer.reply(reply_to, [{"idle_timeout", idle}, {"process_timeout", process}])
-        {:ok, "ok"} = Saga.process(id, "stop", metadata, new_saga)
-        {:noreply, initial_state()}
-      {:process, %{"idle_timeout" => idle} = new_saga} ->
-        :ct.log(:info, 75, 'Dispatched idle timeout ~p; saga: ~p~n', [idle, new_saga])
-        {:ok, "ok"} = Saga.process(id, @some_event, metadata, new_saga)
-        {:noreply, state}
-      {_, saga1} ->
-        :ct.log('Dispatched next timeout ~p; saga: ~p~n', [event, saga1])
-        {:noreply, state}
+    case dispatch(event, state) do
+      {:stop, %{"idle_timeout" => idle, "process_timeout" => process}} ->
+        :ct.log(:info, 75, 'Dispatched stop event; idle_timeout: ~p process_timeout ~p~n', [idle, process])
+        GenServer.reply(reply_to, {:ok, [{"idle_timeout", idle}, {"process_timeout", process}]})
+        {:ok, "ok"} = Saga.process(id, "stop", metadata, saga)
+        {:noreply, clean_state(state)}
+      {:process, %{"idle_timeout" => idle} = new_state} ->
+        :ct.log(:info, 75, 'Dispatched idle timeout ~p; saga: ~p~n', [idle, new_state])
+        {:ok, "ok"} = Saga.idle(
+          id,
+          saga,
+          [],
+          [idle_timeout: @idle_timeout, process_timeout: @process_timeout, retry_counter: @retry_counter]
+        )
+        {:ok, "ok"} = Saga.process(id, @some_event, metadata, saga)
+        {:noreply, new_state}
+      {_resp, new_state} ->
+        :ct.log('Dispatched any timeout ~p; saga: ~p~n', [event, new_state])
+        {:noreply, new_state}
     end
   end
 
@@ -89,14 +96,14 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   #########################################################
 
   @impl GenServer
-#  def handle_info("idle_timeout", %{"saga_id" => id,
-#    "current_step" => step,
-#    "metadata" => metadata, } = state) do
-#    :ct.log(:info, 75, 'Got idle timeout after: ~n', [])
-#    {:ok, "ok"} = Saga.process(id, next_step, metadata)
-#    {:noreply, state}
-#  end
-#
+  #  def handle_info("idle_timeout", %{"saga_id" => id,
+  #    "current_step" => step,
+  #    "metadata" => metadata, } = state) do
+  #    :ct.log(:info, 75, 'Got idle timeout after: ~n', [])
+  #    {:ok, "ok"} = Saga.process(id, next_step, metadata)
+  #    {:noreply, state}
+  #  end
+  #
   def handle_info(message, state) do
     :ct.log(:info, 75, 'Unexpected event: ~p~n', [message])
     {:noreply, state}
@@ -110,43 +117,51 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   defp init_saga do
     %{
       "id" => Utility.new_id(),
-      "start_time" => now(),
-      "idle_timeout" => nil,
-      "process_timeout" => nil,
-      "process_timeout_counter" => @retry_counter,
+      "saga_module" => __MODULE__,
     }
   end
 
   defp initial_state,
        do: %{
+         "start_time" => nil,
+         "idle_timeout" => nil,
+         "process_timeout" => nil,
+         "process_timeout_counter" => @retry_counter,
          "saga_id" => nil,
          "reply_to" => nil,
          "metadata" => nil,
        }
 
-  defp dispatch("idle_timeout", %{"idle_timeout" => nil, "start_time" => start} = saga) do
+  defp clean_state(state) do
+    %{
+      state |
+      "start_time" => now(),
+      "idle_timeout" => nil,
+      "process_timeout" => nil,
+      "process_timeout_counter" => @retry_counter
+    }
+  end
+
+  defp dispatch("idle_timeout", %{"idle_timeout" => nil, "start_time" => start} = state) do
     time_now = now()
-    {:process, %{saga | "idle_timeout" => DateTime.diff(time_now - start, :millisecond), "start_time" => time_now}}
+    {:process, %{state | "idle_timeout" => (time_now - start), "start_time" => time_now}}
   end
 
-  defp dispatch("process_timeout", %{"start_time" => start, "process_timeout_counter" => counter} = saga) when counter > 1 do
-    {:next_process, %{saga | "process_timeout" => DateTime.diff(now() - start, :millisecond), "process_timeout_counter" => counter - 1}}
+  defp dispatch(@some_event, %{"start_time" => start, "process_timeout_counter" => counter} = state) when counter > 1 do
+    {:next_process, %{state | "process_timeout" => (now() - start), "process_timeout_counter" => counter - 1}}
   end
 
-  defp dispatch("process_timeout", %{"process_timeout" => nil, "start_time" => start} = saga) do
-    {:stop, %{saga | "process_timeout" => DateTime.diff(now() - start, :millisecond)}}
+  defp dispatch(@some_event, %{"start_time" => start} = state) do
+    {:stop, %{state | "process_timeout" => (now() - start)}}
   end
 
-  defp dispatch(event, saga) do
-    :ct.log(:info, 75, 'dispatch unexpected event : ~p, saga: ~p~n', [event, saga])
-    {:ok, saga}
+  defp dispatch(_event, state) do
+    {:ok, state}
   end
-  
+
   def now do
-    {:ok, timestamp} = DateTime.now("Etc/UTC")
-    timestamp
+    :erlang.system_time(:millisecond)
   end
-
 
   defp name, do: {:global, __MODULE__}
 
