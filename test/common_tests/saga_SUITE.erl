@@ -8,6 +8,7 @@
 
 -define(WORKFLOW_ONE, 'Elixir.Meta.Saga.Test.WorkflowOne').
 -define(WORKFLOW_TWO, 'Elixir.Meta.Saga.Test.WorkflowTwo').
+-define(WORKFLOW_IDLE, 'Elixir.Meta.Saga.Test.WorkflowIdle').
 %%--------------------------------------------------------------------
 %%  COMMON TEST CALLBACK FUNCTIONS
 %%
@@ -132,3 +133,7 @@ workflow_two(Node) ->
     SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_TWO, exec_saga),
     ExpectedResult = test_helper:rpc_call(Node, ?WORKFLOW_TWO, expected_history),
     ?assertMatch(ExpectedResult, SagaResult).
+
+workflow_idle(Node) ->
+  SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_IDLE, exec_saga),
+  ct:pal("SagaResult ~p~n",[SagaResult]).

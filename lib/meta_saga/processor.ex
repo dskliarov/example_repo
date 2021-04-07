@@ -47,15 +47,22 @@ defmodule Meta.Saga.Processor do
   #
   #########################################################
 
+  def logg(str, data) do
+    File.write("/tmp/aa.log", :erlang.iolist_to_binary(:io_lib.format(str ++ '~n', data)), [:append])
+  end
+
+
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ [])
   def handle_event(%{"id" => id} = data, "idle", metadata) do
     args = {data, "idle", metadata}
+    logg('handle event idle ~p', [id])
     DistributedLib.process(id, args, __MODULE__)
   end
 
   def handle_event(id, event, metadata) do
     args = {event, metadata}
+    logg('handle event process ~p', [event])
     DistributedLib.process(id, args, __MODULE__)
   end
 
@@ -99,19 +106,25 @@ defmodule Meta.Saga.Processor do
     do: process_saga(id, state, event, metadata)
 
   def process_saga(id, %{"owner" => owner} = saga_payload, event, metadata) do
+    logg('process_saga handle process ~p', [event])
     case dispatch_event(saga_payload, event) do
       {:error, %{"state" => state}} ->
+        logg('process_saga disp ~p owner ~p', [event, owner])
         Services.Owner.execute(id, state, :error, owner, metadata)
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
+        logg('process_saga execute ~p owner ~p', [current_event, owner])
         %{"state" => state} = saga_payload1
         {:ok, "ok"} = Services.Owner.execute(id, state, current_event, owner, metadata)
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
+        logg('process_saga idle ~p owner ~p', [idle_timeout, owner])
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         Entities.Saga.core_get(id, metadata)
+        logg('process_saga2 idle ~p owner ~p', [id, owner])
         :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
+        logg('process_saga queue owner ~p', [owner])
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
       {:stop, saga_payload1} ->
         :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
