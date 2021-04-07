@@ -29,7 +29,7 @@ defmodule Meta.Saga.Test.Client.MixProject do
       {:rabbit_transport, git: "git@gitlab.aeon.world:tools/rabbit_transport.git", branch: "dev"},
       {:codec, git: "git@gitlab.aeon.world:tools/codec.git", branch: "dev"},
       {:helper, git: "git@gitlab.aeon.world:tools/helper.git", branch: "dev"},
-      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git"},
+      {:distributed_lib, git: "git@gitlab.aeon.world:tools/distributed_lib.git", branch: "dev"},
       {:cowlib, "~> 2.10", override: true}
     ]
   end
