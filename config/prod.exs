@@ -1,11 +1,9 @@
 import Config
 
-config :distributed_lib,
-  conn_opts: [{
-               {:system, "AEON_ETCD_SERVICE_HOST"},
-               {:system, "AEON_ETCD_SERVICE_PORT"}
-               }],
-  etcd_credentials: [name: "root", password: "KKGQKqZZV6"]
+config :etcd_client,
+  endpoints: {:system, "AEON_ETCD_CLUSTER"},
+  user: {:system, "AEON_ETCD_USER"},
+  password: {:system, "AEON_ETCD_PASSWORD"}
 
 config :wizard,
   transports: [
