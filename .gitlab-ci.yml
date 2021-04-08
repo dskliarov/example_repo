@@ -112,6 +112,9 @@ deployDev:
       --namespace aeon-services --values ./ops/helmchart/values.yaml ./ops/helmchart/
       --set image.repository=$CI_REGISTRY/$CI_PROJECT_PATH
       --set image.tag=$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+      --set AEON_ETCD_CLUSTER=$AEON_ETCD_CLUSTER
+      --set AEON_ETCD_USER=$AEON_ETCD_USER
+      --set AEON_ETCD_PASSWORD=$AEON_ETCD_PASSWORD
   when: manual
   only:
     - dev

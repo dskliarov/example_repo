@@ -43,6 +43,21 @@ spec:
           env:
             - name: MIX_ENV
               value: prod
+            - name: "AEON_ETCD_CLUSTER"
+              valueFrom:
+                secretKeyRef:
+                  key:  AEON_ETCD_CLUSTER
+                  name: {{ .Release.Name }}-auth
+            - name: "AEON_ETCD_USER"
+              valueFrom:
+                secretKeyRef:
+                  key:  AEON_ETCD_USER
+                  name: {{ .Release.Name }}-auth
+            - name: "AEON_ETCD_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key:  AEON_ETCD_PASSWORD
+                  name: {{ .Release.Name }}-auth
           livenessProbe:
             httpGet:
               path: /liveness

@@ -78,3 +78,7 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+AEON_ETCD_CLUSTER: ETCD_NAME
+AEON_ETCD_USER: ETCD_USER
+AEON_ETCD_PASSWORD: ETCD_PWD
