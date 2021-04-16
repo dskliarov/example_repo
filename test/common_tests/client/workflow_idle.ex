@@ -11,7 +11,7 @@ defmodule Meta.Saga.Test.WorkflowIdle do
 
   alias Meta.Saga.Test.{Saga, Utility}
 
-  @idle_timeout 2000
+  @idle_timeout 1000
   @process_timeout 1000
   @retry_counter 3
   @some_event "some_event"
@@ -28,7 +28,7 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   def stop,
       do: GenServer.stop(name())
 
-  def exec_saga, do: GenServer.call(name(), :idle_saga)
+  def exec_saga, do: GenServer.call(name(), :idle_saga, 20_000)
 
   def process(id, event, saga, metadata) do
     GenServer.cast(name(), {:process, id, event, saga, metadata})
@@ -53,12 +53,8 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   @impl GenServer
   def handle_call(:idle_saga, from, state) do
     %{"id" => id} = saga = init_saga()
-    {:ok, "ok"} = Saga.idle(
-      id,
-      saga,
-      [],
-      [idle_timeout: @idle_timeout, process_timeout: @process_timeout, retry_counter: @retry_counter]
-    )
+    :ok = do_idle(1, id, saga, 30_000)
+    :ok = do_idle(1, id, saga, @idle_timeout)
     {:noreply, clean_state(%{state | "reply_to" => from, "metadata" => []})}
   end
 
@@ -77,12 +73,7 @@ defmodule Meta.Saga.Test.WorkflowIdle do
         {:noreply, clean_state(state)}
       {:process, %{"idle_timeout" => idle} = new_state} ->
         :ct.log(:info, 75, 'Dispatched idle timeout ~p; saga: ~p~n', [idle, new_state])
-        {:ok, "ok"} = Saga.idle(
-          id,
-          saga,
-          [],
-          [idle_timeout: @idle_timeout, process_timeout: @process_timeout, retry_counter: @retry_counter]
-        )
+        :ok = do_idle(5, id, saga, @idle_timeout)
         {:ok, "ok"} = Saga.process(id, @some_event, metadata, saga)
         {:noreply, new_state}
       {_resp, new_state} ->
@@ -165,4 +156,16 @@ defmodule Meta.Saga.Test.WorkflowIdle do
 
   defp name, do: {:global, __MODULE__}
 
+  defp do_idle(0, _id, _saga, _idle_timeout), do: :ok
+  
+  defp do_idle(cnt, id, saga, idle_timeout) do
+    {:ok, "ok"} = Saga.idle(
+      id,
+      saga,
+      [],
+      [idle_timeout: idle_timeout, process_timeout: @process_timeout, retry_counter: @retry_counter]
+    )
+    do_idle(cnt - 1, id, saga, idle_timeout)
+  end
+  
 end
