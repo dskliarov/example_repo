@@ -3,7 +3,7 @@ defmodule Meta.Saga.Test.Saga do
   alias Wizard.Client
 
   @owner "svc.meta.test_saga.response"
-  @saga "svc.meta.saga2"
+  @saga "svc.meta.saga_v2"
   @idle ".idle"
   @process ".process"
   @idle_timeout 3_000
