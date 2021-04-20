@@ -10,7 +10,7 @@ config :wizard,
     {GrpcTransport, codec: Codec.Identity},
     {RabbitTransport, codec: Codec.Etf}
   ],
-  lrc_endpoint: [enabled: true, port: 3000, ip: "127.0.0.1", checkpoints: [], expected_app: :saga2]
+  lrc_endpoint: [enabled: true, port: 3000, ip: "127.0.0.1", checkpoints: [], expected_app: nil]
 
 config :grpc_transport,
   listen: {'0.0.0.0', 9000}, use_dns: true, tld: "aeon-services.svc.cluster.local"
