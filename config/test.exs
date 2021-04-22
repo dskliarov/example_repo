@@ -1,6 +1,6 @@
 import Config
 
-config :saga2,
+config :saga_v2,
   conn_opts: [{{:system, "AEON_ETCD_SERVICE_HOST"},
                {:system, "AEON_ETCD_SERVICE_PORT"}}]
 

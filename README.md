@@ -46,7 +46,7 @@ The Service accepts following commands:
     }
 
    args = [
-      to: "rpc://svc.meta.saga2.idle,
+      to: "rpc://svc.meta.saga_v2.idle,
       payload: payload,
       metadata: metadata
     ]
@@ -67,7 +67,7 @@ The Service accepts following commands:
     }
 
    args = [
-      to: "rpc://svc.meta.saga2.process,
+      to: "rpc://svc.meta.saga_v2.process,
       payload: payload,
       metadata: metadata
     ]
@@ -87,7 +87,7 @@ The Service accepts following commands:
     }
 
    args = [
-      to: "rpc://svc.meta.saga2.get,
+      to: "rpc://svc.meta.saga_v2.get,
       payload: payload,
       metadata: metadata
     ]
@@ -120,7 +120,7 @@ The Service accepts following commands:
     }
 
    args = [
-      to: "rpc://svc.meta.saga2.stop,
+      to: "rpc://svc.meta.saga_v2.stop,
       payload: payload,
       metadata: metadata
     ]
@@ -146,7 +146,7 @@ The Service accepts following commands:
     }
 
    args = [
-      to: "rpc://svc.meta.saga2.process,
+      to: "rpc://svc.meta.saga_v2.process,
       payload: payload,
       metadata: metadata
     ]

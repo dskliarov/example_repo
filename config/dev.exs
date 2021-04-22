@@ -1,6 +1,6 @@
 import Config
 
-config :saga2,
+config :saga_v2,
   conn_opts: [{'127.0.0.1', 2379}]
 
 config :wizard,

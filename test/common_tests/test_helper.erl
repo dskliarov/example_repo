@@ -2,6 +2,8 @@
 
 -include_lib("common_test/include/ct.hrl").
 
+-compile(export_all).
+
 -export([
          timestamp/1,
          start_app_on_nodes/1,
@@ -74,7 +76,7 @@ load_env_variables() ->
     load_env_variables_riak(),
     load_env_variables_etcd(),
     load_env_variables_service("CORE", "9000"),
-    load_env_variables_service("SAGA2", "9001"),
+    load_env_variables_service("SAGA_V2", "9001"),
     load_env_variables_service("TEST_SAGA", "9002").
 
 load_env_variables_riak() ->
@@ -113,7 +115,7 @@ stop_app_on_nodes(Nodes) ->
     lists:map(fun stop_app1/1, Nodes).
 
 start_app(Node) ->
-    start_app(saga2, Node).
+    start_app(saga_v2, Node).
 
 start_app(Application, Node) when is_atom(Node) ->
     Node1 = node_name(Node),
@@ -200,9 +202,10 @@ compose_file() ->
 
 project_root_directory() ->
     FilePath = code:which(?MODULE),
-    [ProjectDirectory|_] = string:split(FilePath, "test"),
-    [ProjectDirectory1|_] = string:split(ProjectDirectory, "_build"),
-    ProjectDirectory1.
+    [ProjectDirectory|_] = string:split(FilePath, "_build/test/"),
+    ProjectDirectory.
+    % [ProjectDirectory1|_] = string:split(ProjectDirectory, "_build"),
+    % ProjectDirectory1.
 
 erl_app_dir(LibDirectory, Application) ->
     format("-pa ~s/~s/ebin/", [LibDirectory, Application]).
@@ -314,7 +317,7 @@ start_nodes([Node|Nodes], Acc) ->
     start_nodes(Nodes, Acc1).
 
 start_node(Node, Acc) ->
-    start_node(saga2, Node, Acc, true).
+    start_node(saga_v2, Node, Acc, true).
 
 start_client_node(Node, Acc) ->
     start_node(test_saga, Node, Acc, false).

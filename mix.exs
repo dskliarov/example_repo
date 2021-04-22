@@ -3,7 +3,7 @@ defmodule Meta.Saga.MixProject do
 
   def project do
     [
-      app: :saga2,
+      app: :saga_v2,
       version: "0.1.0",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,

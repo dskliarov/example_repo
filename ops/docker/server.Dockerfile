@@ -46,4 +46,4 @@ COPY         --from=builder /opt/built ../
 
 ENV          PATH="$PATH:$PWD"
 
-ENTRYPOINT   ["saga2", "start"]
+ENTRYPOINT   ["saga_v2", "start"]

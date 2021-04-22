@@ -6,7 +6,7 @@ defmodule Meta.Saga.Aeon do
 
     @moduledoc "Wizard Endpoint setup"
 
-    use Wizard.Endpoint, service: :saga2, type: :svc, namespace: :meta
+    use Wizard.Endpoint, service: :saga_v2, type: :svc, namespace: :meta
 
     alias Meta.Saga.CommandHandlers.Handler
 

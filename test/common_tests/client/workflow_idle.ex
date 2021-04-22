@@ -157,7 +157,7 @@ defmodule Meta.Saga.Test.WorkflowIdle do
   defp name, do: {:global, __MODULE__}
 
   defp do_idle(0, _id, _saga, _idle_timeout), do: :ok
-  
+
   defp do_idle(cnt, id, saga, idle_timeout) do
     {:ok, "ok"} = Saga.idle(
       id,
@@ -167,5 +167,5 @@ defmodule Meta.Saga.Test.WorkflowIdle do
     )
     do_idle(cnt - 1, id, saga, idle_timeout)
   end
-  
+
 end
