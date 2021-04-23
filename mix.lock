@@ -19,6 +19,7 @@
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm", "99cb4128cffcb3227581e5d4d803d5413fa643f4eb96523f77d9e6937d994ceb"},
   "grpc": {:git, "https://github.com/elixir-grpc/grpc.git", "eff8a8828d27ddd7f63a3c1dd5aae86246df215e", []},
   "grpc_transport": {:git, "git@gitlab.aeon.world:tools/grpc_transport_v2.git", "1d0177a6aee2bee824711261975826168370d551", [branch: "dev"]},
+  "grpcbox": {:git, "git@gitlab.aeon.world:tools/grpcbox.git", "7e3a203814b071b059c6f113a5986f411ca82b00", [branch: "PRESENT-973"]},
   "gun": {:hex, :grpc_gun, "2.0.0", "f99678a2ab975e74372a756c86ec30a8384d3ac8a8b86c7ed6243ef4e61d2729", [:rebar3], [{:cowlib, "~> 2.8.0", [hex: :cowlib, repo: "hexpm", optional: false]}], "hexpm", "03dbbca1a9c604a0267a40ea1d69986225091acb822de0b2dbea21d5815e410b"},
   "hamcrest": {:hex, :basho_hamcrest, "0.4.1", "fb7b2c92d252a1e9db936750b86089addaebeb8f87967fb4bbdda61e8863338e", [:make, :mix, :rebar3], [], "hexpm", "26974025bc61bc09ef5b13be5dce5035ca11bf37bf4a865e9d86c455c942298f"},
   "helper": {:git, "git@gitlab.aeon.world:tools/helper.git", "1a3851efcd1be102e2315fc0bd4671d63d22afaf", [branch: "dev"]},
