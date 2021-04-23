@@ -53,7 +53,7 @@ defmodule Meta.Saga.Aeon do
     @spec execute(saga_id(), state(), event(), owner(), metadata()) :: result()
     def execute(id, state,  event, owner, metadata) do
       [
-        to: "rpc://#{owner}",
+        to: owner,
         payload: %{
           "id" => id,
           "state" => state,
