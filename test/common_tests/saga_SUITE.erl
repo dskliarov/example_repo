@@ -8,6 +8,7 @@
 
 -define(WORKFLOW_ONE, 'Elixir.Meta.Saga.Test.WorkflowOne').
 -define(WORKFLOW_TWO, 'Elixir.Meta.Saga.Test.WorkflowTwo').
+-define(WORKFLOW_IDLE, 'Elixir.Meta.Saga.Test.WorkflowIdle').
 %%--------------------------------------------------------------------
 %%  COMMON TEST CALLBACK FUNCTIONS
 %%
@@ -117,7 +118,8 @@ saga_happy_path({postlude, _Config}) ->
 saga_happy_path(Config) ->
     SagaNode = proplists:get_value(saga_node, Config),
     workflow_one(SagaNode),
-    workflow_two(SagaNode).
+    workflow_two(SagaNode),
+    workflow_idle(SagaNode).
 
 %%--------------------------------------------------------------------
 %% Private functions
@@ -132,3 +134,8 @@ workflow_two(Node) ->
     SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_TWO, exec_saga),
     ExpectedResult = test_helper:rpc_call(Node, ?WORKFLOW_TWO, expected_history),
     ?assertMatch(ExpectedResult, SagaResult).
+
+workflow_idle(Node) ->
+  SagaResult = test_helper:rpc_call(Node, ?WORKFLOW_IDLE, exec_saga),
+  ct:pal("idle test result ~p~n",[SagaResult]),
+  ?assertMatch({ok, _}, SagaResult).
