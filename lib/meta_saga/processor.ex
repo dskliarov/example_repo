@@ -6,6 +6,7 @@ defmodule Meta.Saga.Processor do
 
   alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.{Aeon.Entities, Aeon.Services, Cron}
+  alias Wizard.ResourceLocator
 
   @behaviour MessageHandler
 
@@ -69,8 +70,21 @@ defmodule Meta.Saga.Processor do
   end
 
   @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
-  def get_saga(id, metadata \\ []) do
-    Entities.Saga.core_get(id, metadata)
+  # def get_saga(id, metadata \\ []) do
+  #   saga = Entities.Saga.core_get(id, metadata)
+  # end
+
+  def get_saga(id, metadata) do
+    with %{type: type, namespace: namespace, service: service} <- List.keyfind(metadata, :call_to_source, 0),
+         {:ok, {_id, {"owner" = owner}}} = response <- Entities.Saga.core_get(id, metadata),
+         {_protocol, {^type, ^namespace, ^service, _command}} <- ResourceLocator.parse(owner) do
+      response
+    else
+      nil ->
+        {:error, "saga: metadata has no caller info"}
+      rest ->
+        {:error, "saga: caller and owner missmatch"}
+    end
   end
 
   #########################################################
