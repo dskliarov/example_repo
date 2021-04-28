@@ -153,7 +153,6 @@ defmodule Meta.Saga.Processor do
     end
   end
 
-
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
     with {:ok, _} <- Entities.Saga.core_put(id, saga_payload, metadata),
