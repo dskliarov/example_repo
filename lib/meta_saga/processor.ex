@@ -110,7 +110,7 @@ defmodule Meta.Saga.Processor do
       {:idle, saga_payload1, idle_timeout} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         Entities.Saga.core_get(id, metadata)
-        :ok = Cron.apd_idle_timeout(id, idle_timeout)
+        :ok = Cron.add_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
       {:stop, saga_payload1} ->
