@@ -69,20 +69,16 @@ defmodule Meta.Saga.Processor do
     handle_event(id, {"stop", saga}, metadata)
   end
 
-  @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
-  # def get_saga(id, metadata \\ []) do
-  #   saga = Entities.Saga.core_get(id, metadata)
-  # end
-
-  def get_saga(id, metadata) do
+  @spec get_saga_with_owner_check(saga_id(), keyword()) :: {:ok, saga_payload} | error
+  def get_saga_with_owner_check(id, metadata) do
     with %{type: type, namespace: namespace, service: service} <- List.keyfind(metadata, :call_to_source, 0),
-         {:ok, {_id, {"owner" = owner}}} = response <- Entities.Saga.core_get(id, metadata),
+         {:ok, {_id, %{"owner" => owner}}} = response <- get_saga(id, metadata),
          {_protocol, {^type, ^namespace, ^service, _command}} <- ResourceLocator.parse(owner) do
       response
     else
       nil ->
         {:error, "saga: metadata has no caller info"}
-      rest ->
+      _rest ->
         {:error, "saga: caller and owner missmatch"}
     end
   end
@@ -139,6 +135,13 @@ defmodule Meta.Saga.Processor do
   #  Private functions
   #
   #########################################################
+
+
+  @spec get_saga(saga_id(), keyword()) :: {:ok, {saga_id, saga_payload}} | error
+  defp get_saga(id, metadata) do
+    Entities.Saga.core_get(id, metadata)
+  end
+
 
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
