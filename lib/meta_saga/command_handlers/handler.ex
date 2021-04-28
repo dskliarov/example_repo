@@ -48,6 +48,10 @@ defmodule Meta.Saga.CommandHandlers.Handler do
     end
   end
 
+  def handle_message(@saga <> "process_callback", request, metadata) do
+    Logger.debug("Process result: #{inspect request}; metadata: #{inspect metadata}")
+  end
+
   #########################################################
   #
   #  Private functions

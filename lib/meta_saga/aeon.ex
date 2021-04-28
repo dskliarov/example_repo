@@ -14,6 +14,7 @@ defmodule Meta.Saga.Aeon do
     command("get", Handler, input_schema: {:json, "get.json"})
     command("stop", Handler)
     command("process", Handler)
+    command("process_callback", Handler)
   end
 
   defmodule Entities.Saga do
@@ -58,7 +59,8 @@ defmodule Meta.Saga.Aeon do
           "id" => id,
           "state" => state,
           "event" => event},
-        metadata: metadata
+        metadata: metadata,
+        callback: "rpc://svc.meta.saga_v2.process_callback"
       ]
       |> Client.exec()
     end

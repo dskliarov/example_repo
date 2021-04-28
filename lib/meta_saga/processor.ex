@@ -104,13 +104,13 @@ defmodule Meta.Saga.Processor do
         Services.Owner.execute(id, state, :error, owner, metadata)
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
-        {:ok, "ok"} = Services.Owner.execute(id, state, current_event, owner, metadata)
+        :ok = Services.Owner.execute(id, state, current_event, owner, metadata)
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         Entities.Saga.core_get(id, metadata)
-        :ok = Cron.add_idle_timeout(id, idle_timeout)
+        :ok = Cron.apd_idle_timeout(id, idle_timeout)
       {:queue, saga_payload1} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
       {:stop, saga_payload1} ->
