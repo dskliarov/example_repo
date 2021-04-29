@@ -71,7 +71,8 @@ defmodule Meta.Saga.Processor do
 
   @spec get_saga_with_owner_check(saga_id(), keyword()) :: {:ok, saga_payload} | error
   def get_saga_with_owner_check(id, metadata) do
-    with {:call_source, %{type: type, namespace: namespace, service: service}} <- List.keyfind(metadata, :call_source, 0),
+    with {:call_source, %{type: type, namespace: namespace, service: service}}
+           <- List.keyfind(metadata, :call_source, 0),
          {:ok, {_id, %{"owner" => owner}}} = response <- get_saga(id, metadata),
          true <- match_caller_and_owner?(type, namespace, service, owner) do
       response
@@ -135,7 +136,6 @@ defmodule Meta.Saga.Processor do
   #  Private functions
   #
   #########################################################
-
 
   @spec get_saga(saga_id(), keyword()) :: {:ok, {saga_id, saga_payload}} | error
   defp get_saga(id, metadata) do
