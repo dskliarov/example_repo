@@ -22,11 +22,7 @@
   "grpcbox": {:git, "git@gitlab.aeon.world:tools/grpcbox.git", "7e3a203814b071b059c6f113a5986f411ca82b00", [branch: "PRESENT-973"]},
   "gun": {:hex, :grpc_gun, "2.0.0", "f99678a2ab975e74372a756c86ec30a8384d3ac8a8b86c7ed6243ef4e61d2729", [:rebar3], [{:cowlib, "~> 2.8.0", [hex: :cowlib, repo: "hexpm", optional: false]}], "hexpm", "03dbbca1a9c604a0267a40ea1d69986225091acb822de0b2dbea21d5815e410b"},
   "hamcrest": {:hex, :basho_hamcrest, "0.4.1", "fb7b2c92d252a1e9db936750b86089addaebeb8f87967fb4bbdda61e8863338e", [:make, :mix, :rebar3], [], "hexpm", "26974025bc61bc09ef5b13be5dce5035ca11bf37bf4a865e9d86c455c942298f"},
-<<<<<<< HEAD
-  "helper": {:git, "git@gitlab.aeon.world:tools/helper.git", "7d1feaad3ffdc60a78c4b4e62f10453d3ce15766", [branch: "dev"]},
-=======
   "helper": {:git, "git@gitlab.aeon.world:tools/helper.git", "c38b0b7b5a693424a2ee992ede95d743fe883329", [branch: "dev"]},
->>>>>>> e62fba5501057795fa21f316cd986651c568ef15
   "jason": {:hex, :jason, "1.2.2", "ba43e3f2709fd1aa1dce90aaabfd039d000469c05c56f0b8e31978e03fa39052", [:mix], [{:decimal, "~> 1.0 or ~> 2.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm", "18a228f5f0058ee183f29f9eae0805c6e59d61c3b006760668d8d18ff0d12179"},
   "jsx": {:hex, :jsx, "2.11.0", "08154624050333919b4ac1b789667d5f4db166dc50e190c4d778d1587f102ee0", [:rebar3], [], "hexpm", "eed26a0d04d217f9eecefffb89714452556cf90eb38f290a27a4d45b9988f8c0"},
   "lager": {:hex, :lager, "3.8.2", "b180b814fd8b7082b6ca8aaf287e55a908d304cfc7a240d32f4db2d07092b7d0", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm", "73329ce700410b423f64aafc5f94583073904899098e4461f3558ed2980462ab"},
