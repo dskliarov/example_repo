@@ -9,11 +9,7 @@ config :logger,
 config :logger, :console,
   truncate: :infinity,
   format: "{ date=$date time=$time level=$level event=$message $metadata }\n",
-  metadata: [
-    :service,
-    :namespace,
-    :tag
-  ]
+  metadata: :all
 
 config :distributed_lib,
   watch_topic_prefix: "saga"
