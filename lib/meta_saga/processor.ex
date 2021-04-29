@@ -100,17 +100,17 @@ defmodule Meta.Saga.Processor do
 
   def process_saga(id, %{"owner" => owner} = saga_payload, event, metadata) do
     case dispatch_event(saga_payload, event) do
-      {:error, %{"state" => state}} ->
-        Services.Owner.execute(id, state, :error, owner, metadata)
+      {:error, saga_payload} ->
+        saga_payload1 = update_saga_error("final_process_timeout", saga_payload)
+        idle_timeout = idle_timeout(saga_payload)
+        switch_to_idle(id, saga_payload1, idle_timeout, metadata)
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
-        {ok, "async_submitted"} = Services.Owner.execute(id, state, current_event, owner, metadata)
+        {:ok, "async_submitted"} = Services.Owner.execute(id, state, current_event, owner, metadata)
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
-        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
-        Entities.Saga.core_get(id, metadata)
-        :ok = Cron.add_idle_timeout(id, idle_timeout)
+        switch_to_idle(id, saga_payload1, idle_timeout, metadata)
       {:queue, saga_payload1} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
       {:stop, saga_payload1} ->
@@ -125,6 +125,20 @@ defmodule Meta.Saga.Processor do
   #  Private functions
   #
   #########################################################
+
+  defp update_saga_error(error, %{"error" => ""} = saga) do
+    %{saga|"error" => error}
+  end
+
+  defp update_saga_error(error, %{"error" => error,
+                                  "error_history" => error_history} = saga) do
+    %{saga|"error" => error, "error_history" => [error | error_history]}
+  end
+
+  defp switch_to_idle(id, saga, idle_timeout, metadata) do
+    {:ok, _} = Entities.Saga.core_put(id, saga, metadata)
+    :ok = Cron.add_idle_timeout(id, idle_timeout)
+  end
 
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
@@ -153,9 +167,10 @@ defmodule Meta.Saga.Processor do
     {:ignore, saga_payload}
   end
 
+  # Final error. Do not retry
   defp dispatch_event(%{"process" => {_current_event, 0}} = saga_payload,
     :process_timeout) do
-    {:error, saga_payload}
+    {:final_error, saga_payload}
   end
 
   defp dispatch_event(%{"process" => {
