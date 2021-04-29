@@ -73,7 +73,7 @@ defmodule Meta.Saga.Processor do
   def get_saga_with_owner_check(id, metadata) do
     with {:call_source, %{type: type, namespace: namespace, service: service}}
            <- List.keyfind(metadata, :call_source, 0),
-         {:ok, {_id, %{"owner" => owner}}} = response <- get_saga(id, metadata),
+         {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata),
          true <- match_caller_and_owner?(type, namespace, service, owner) do
       response
     else
@@ -98,7 +98,7 @@ defmodule Meta.Saga.Processor do
 
   @impl MessageHandler
   def handle(id, {event, metadata}, _opts) do
-    with {:ok, saga} <- get_saga(id, metadata),
+    with {:ok, saga} <- Entities.Saga.core_get(id, metadata),
       do: process_saga(id, saga, event, metadata)
   end
 
@@ -136,11 +136,6 @@ defmodule Meta.Saga.Processor do
   #  Private functions
   #
   #########################################################
-
-  @spec get_saga(saga_id(), keyword()) :: {:ok, {saga_id, saga_payload}} | error
-  defp get_saga(id, metadata) do
-    Entities.Saga.core_get(id, metadata)
-  end
 
   defp match_caller_and_owner?(type, namespace, service, owner) do
     type      = Atom.to_string(type)
