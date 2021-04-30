@@ -4,6 +4,8 @@ defmodule Meta.Saga.Processor do
   Saga event processor
   """
 
+  require Logger
+
   alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.{Aeon.Entities, Aeon.Services, Cron}
 
@@ -100,7 +102,8 @@ defmodule Meta.Saga.Processor do
 
   def process_saga(id, %{"owner" => owner} = saga_payload, event, metadata) do
     case dispatch_event(saga_payload, event) do
-      {:error, saga_payload} ->
+      {:final_error, saga_payload} ->
+        Logger.debug("Final error handling: #{inspect saga_payload}; metadata: #{inspect metadata}")
         saga_payload1 = update_saga_error("final_process_timeout", saga_payload)
         idle_timeout = idle_timeout(saga_payload)
         switch_to_idle(id, saga_payload1, idle_timeout, metadata)
@@ -177,6 +180,8 @@ defmodule Meta.Saga.Processor do
                         current_event,
                         retry_counter
                         }} = saga_payload, :process_timeout) do
+    Logger.debug("Process execution timeout. Retry counter: #{inspect retry_counter};
+    current_event: #{inspect current_event}")
     retry_counter1 = retry_counter - 1
     saga_payload = %{saga_payload|"process" => {current_event, retry_counter1}}
     process_timeout = process_timeout(saga_payload)
