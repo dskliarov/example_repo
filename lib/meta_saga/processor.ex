@@ -147,7 +147,7 @@ defmodule Meta.Saga.Processor do
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
     with {:ok, _} <- Entities.Saga.core_put(id, saga_payload, metadata),
          :ok <- Cron.delete_timeout(id),
-         {:ok, "ok"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
+         {:ok, "async_submitted"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
       do: :ok
   end
 
