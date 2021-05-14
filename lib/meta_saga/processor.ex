@@ -40,7 +40,10 @@ defmodule Meta.Saga.Processor do
   {:ignore, saga_payload()} |
   {:error, saga_payload()} |
   {:queue, saga_payload()} |
-  {:execute_process, execute_message()} | {:idle, saga_payload(), timeout()}
+  {:execute_process, execute_message()} |
+  {:idle, saga_payload(), timeout()} |
+  {:final_error, saga_payload()}
+
   @type request :: map()
 
   #########################################################
@@ -57,7 +60,14 @@ defmodule Meta.Saga.Processor do
   end
 
   def handle_event(id, event, metadata) do
-    args = {event, metadata}
+    metadata_updated = Keyword.put(metadata, :saga_event_type, :external)
+    args = {event, metadata_updated}
+    DistributedLib.process(id, args, __MODULE__)
+  end
+
+  def handle_internal_event(id, event, metadata) do
+    metadata_updated = Keyword.put(metadata, :saga_event_type, :internal)
+    args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
