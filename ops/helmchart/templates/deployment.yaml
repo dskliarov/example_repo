@@ -62,14 +62,14 @@ spec:
             httpGet:
               path: /liveness
               port: health-port
-            failureThreshold: 1
-            periodSeconds: 10 
+            failureThreshold: 3
+            periodSeconds: 30 
           readinessProbe:
             httpGet:
               path: /readiness
               port: health-port
-            failureThreshold: 1
-            periodSeconds: 10
+            failureThreshold: 3
+            periodSeconds: 30
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
