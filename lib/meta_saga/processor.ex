@@ -55,7 +55,8 @@ defmodule Meta.Saga.Processor do
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ [])
   def handle_event(%{"id" => id} = data, "idle", metadata) do
-    args = {data, "idle", metadata}
+    metadata_updated = Keyword.put(metadata, :saga_event_type, :external)
+    args = {data, "idle", metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
@@ -65,7 +66,8 @@ defmodule Meta.Saga.Processor do
     DistributedLib.process(id, args, __MODULE__)
   end
 
-  def handle_internal_event(id, event, metadata) do
+  @spec handle_internal_event(saga_id(), event(), metadata()) :: handle_result()
+  def handle_internal_event(id, event, metadata \\ []) do
     metadata_updated = Keyword.put(metadata, :saga_event_type, :internal)
     args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
