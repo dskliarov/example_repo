@@ -15,6 +15,7 @@ defmodule Meta.Saga.Processor do
   @retry_counter 3
   @process_timeout 10_000
   @idle_timeout 300_000
+  @event_type "saga_event_type"
 
   #########################################################
   #
@@ -55,20 +56,22 @@ defmodule Meta.Saga.Processor do
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ [])
   def handle_event(%{"id" => id} = data, "idle", metadata) do
-    metadata_updated = Keyword.put(metadata, :saga_event_type, :external)
+    metadata_updated =
+      List.keystore(metadata, @event_type, 0, {@event_type, "external"})
     args = {data, "idle", metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
   def handle_event(id, event, metadata) do
-    metadata_updated = Keyword.put(metadata, :saga_event_type, :external)
+    metadata_updated =
+      List.keystore(metadata, @event_type, 0, {@event_type, "external"})
     args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
   @spec handle_internal_event(saga_id(), event(), metadata()) :: handle_result()
   def handle_internal_event(id, event, metadata \\ []) do
-    metadata_updated = Keyword.put(metadata, :saga_event_type, :internal)
+    metadata_updated = List.keystore(metadata, @event_type, 0, {@event_type, "internal"})
     args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
