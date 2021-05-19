@@ -8,6 +8,7 @@ defmodule Meta.Saga.Processor do
 
   alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.{Aeon.Entities, Aeon.Services, Cron}
+  alias Wizard.ResourceLocator
 
   @behaviour MessageHandler
 
@@ -85,9 +86,19 @@ defmodule Meta.Saga.Processor do
     handle_event(id, {"stop", saga}, metadata)
   end
 
-  @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
-  def get_saga(id, metadata \\ []) do
-    Entities.Saga.core_get(id, metadata)
+  @spec get_saga_with_owner_check(saga_id(), keyword()) :: {:ok, saga_payload} | error
+  def get_saga_with_owner_check(id, metadata) do
+    with {:call_source, %{type: type, namespace: namespace, service: service}}
+           <- List.keyfind(metadata, :call_source, 0),
+         {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata),
+         true <- match_caller_and_owner?(type, namespace, service, owner) do
+      response
+    else
+      nil ->
+        {:error, "saga: metadata has no caller info"}
+      _rest ->
+        {:error, "saga: caller and owner missmatch"}
+    end
   end
 
   #########################################################
@@ -104,7 +115,7 @@ defmodule Meta.Saga.Processor do
 
   @impl MessageHandler
   def handle(id, {event, metadata}, _opts) do
-    with {:ok, saga} <- get_saga(id, metadata),
+    with {:ok, saga} <- Entities.Saga.core_get(id, metadata),
       do: process_saga(id, saga, event, metadata)
   end
 
@@ -142,6 +153,17 @@ defmodule Meta.Saga.Processor do
   #  Private functions
   #
   #########################################################
+
+  defp match_caller_and_owner?(type, namespace, service, owner) do
+    type      = Atom.to_string(type)
+    namespace = Atom.to_string(namespace)
+    service   = Atom.to_string(service)
+
+    case ResourceLocator.parse(owner) do
+      {_protocol, {^type, ^namespace, ^service, _command}} -> true
+      _rest -> false
+    end
+  end
 
   defp update_saga_error(error, %{"error" => ""} = saga) do
     %{saga|"error" => error}
