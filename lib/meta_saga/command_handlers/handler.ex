@@ -39,18 +39,17 @@ defmodule Meta.Saga.CommandHandlers.Handler do
   end
 
   def handle_message(@saga <> "process", request, metadata) do
-    case Keyword.get(metadata, :saga_id, nil) do
+    case List.keyfind(metadata, "saga_id", 0) do
       nil ->
         {:error, "Invalid request. Saga Id is not present."}
-      id ->
+      {_, id} ->
         event = event(request)
         Processor.handle_event(id, event, metadata)
     end
   end
 
-  def handle_message(@saga <> "process_callback", request, metadata) do
-    Logger.debug("Process result: #{inspect request}; metadata: #{inspect metadata}")
-  end
+  def handle_message(@saga <> "process_callback", request, metadata),
+    do: Logger.debug("Process result: #{inspect request}; metadata: #{inspect metadata}")
 
   #########################################################
   #

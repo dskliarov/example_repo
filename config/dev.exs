@@ -10,7 +10,7 @@ config :wizard,
   ]
 
 config :grpc_transport,
-  listen: {'0.0.0.0', 9104}
+  listen: {'0.0.0.0', 9008}
 
 config :rabbit_transport, :conn_opts, {'127.0.0.1', 5672}
 

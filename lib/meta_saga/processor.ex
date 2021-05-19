@@ -4,6 +4,8 @@ defmodule Meta.Saga.Processor do
   Saga event processor
   """
 
+  require Logger
+
   alias DistributedLib.Processor.MessageHandler
   alias Meta.Saga.{Aeon.Entities, Aeon.Services, Cron}
   alias Wizard.ResourceLocator
@@ -14,6 +16,7 @@ defmodule Meta.Saga.Processor do
   @retry_counter 3
   @process_timeout 10_000
   @idle_timeout 300_000
+  @event_type "saga_event_type"
 
   #########################################################
   #
@@ -39,7 +42,10 @@ defmodule Meta.Saga.Processor do
   {:ignore, saga_payload()} |
   {:error, saga_payload()} |
   {:queue, saga_payload()} |
-  {:execute_process, execute_message()} | {:idle, saga_payload(), timeout()}
+  {:execute_process, execute_message()} |
+  {:idle, saga_payload(), timeout()} |
+  {:final_error, saga_payload()}
+
   @type request :: map()
 
   #########################################################
@@ -51,12 +57,23 @@ defmodule Meta.Saga.Processor do
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ [])
   def handle_event(%{"id" => id} = data, "idle", metadata) do
-    args = {data, "idle", metadata}
+    metadata_updated =
+      List.keystore(metadata, @event_type, 0, {@event_type, "external"})
+    args = {data, "idle", metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
   def handle_event(id, event, metadata) do
-    args = {event, metadata}
+    metadata_updated =
+      List.keystore(metadata, @event_type, 0, {@event_type, "external"})
+    args = {event, metadata_updated}
+    DistributedLib.process(id, args, __MODULE__)
+  end
+
+  @spec handle_internal_event(saga_id(), event(), metadata()) :: handle_result()
+  def handle_internal_event(id, event, metadata \\ []) do
+    metadata_updated = List.keystore(metadata, @event_type, 0, {@event_type, "internal"})
+    args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
@@ -111,17 +128,17 @@ defmodule Meta.Saga.Processor do
 
   def process_saga(id, %{"owner" => owner} = saga_payload, event, metadata) do
     case dispatch_event(saga_payload, event) do
-      {:error, %{"state" => state}} ->
-        Services.Owner.execute(id, state, :error, owner, metadata)
+      {:final_error, saga_payload} ->
+        Logger.debug("Final error handling: #{inspect saga_payload}; metadata: #{inspect metadata}")
+        saga_payload1 = update_saga_error("final_process_timeout", saga_payload)
+        :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
         {:ok, "async_submitted"} = Services.Owner.execute(id, state, current_event, owner, metadata)
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
-        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
-        Entities.Saga.core_get(id, metadata)
-        :ok = Cron.add_idle_timeout(id, idle_timeout)
+        switch_to_idle(id, saga_payload1, idle_timeout, metadata)
       {:queue, saga_payload1} ->
         {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
       {:stop, saga_payload1} ->
@@ -148,11 +165,25 @@ defmodule Meta.Saga.Processor do
     end
   end
 
+  defp update_saga_error(error, %{"error" => ""} = saga) do
+    %{saga|"error" => error}
+  end
+
+  defp update_saga_error(error, %{"error" => error,
+                                  "error_history" => error_history} = saga) do
+    %{saga|"error" => error, "error_history" => [error | error_history]}
+  end
+
+  defp switch_to_idle(id, saga, idle_timeout, metadata) do
+    {:ok, _} = Entities.Saga.core_put(id, saga, metadata)
+    :ok = Cron.add_idle_timeout(id, idle_timeout)
+  end
+
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
     with {:ok, _} <- Entities.Saga.core_put(id, saga_payload, metadata),
          :ok <- Cron.delete_timeout(id),
-         {:ok, "ok"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
+         {:ok, "async_submitted"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
       do: :ok
   end
 
@@ -175,15 +206,18 @@ defmodule Meta.Saga.Processor do
     {:ignore, saga_payload}
   end
 
+  # Final error. Do not retry
   defp dispatch_event(%{"process" => {_current_event, 0}} = saga_payload,
     :process_timeout) do
-    {:error, saga_payload}
+    {:final_error, saga_payload}
   end
 
   defp dispatch_event(%{"process" => {
                         current_event,
                         retry_counter
                         }} = saga_payload, :process_timeout) do
+    Logger.debug("Process execution timeout. Retry counter: #{inspect retry_counter};
+    current_event: #{inspect current_event}")
     retry_counter1 = retry_counter - 1
     saga_payload = %{saga_payload|"process" => {current_event, retry_counter1}}
     process_timeout = process_timeout(saga_payload)

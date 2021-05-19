@@ -23,13 +23,13 @@ defmodule Meta.Saga.Cron do
 
   @spec add_execute_timeout(saga_id(), timestamp()) :: :ok
   def add_execute_timeout(id, timestamp) do
-    {Processor, :handle_event, [id, :process_timeout]}
+    {Processor, :handle_internal_event, [id, :process_timeout]}
     |> add_timeout(id, timestamp)
   end
 
   @spec add_idle_timeout(saga_id(), timeout()) :: :ok
   def add_idle_timeout(id, timeout) do
-    {Processor, :handle_event, [id, :idle_timeout]}
+    {Processor, :handle_internal_event, [id, :idle_timeout]}
     |> add_timeout(id, timeout)
   end
 
