@@ -90,7 +90,7 @@ defmodule Meta.Saga.Processor do
   def get_saga_with_owner_check(id, metadata) do
     with {:call_source, %{type: type, namespace: namespace, service: service}}
            <- List.keyfind(metadata, :call_source, 0),
-         {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata) |> IO.inspect(label: :llll1),
+         {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata),
          true <- match_caller_and_owner?(type, namespace, service, owner) do
       response
     else
