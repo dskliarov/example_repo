@@ -86,10 +86,9 @@ defmodule Meta.Saga.Processor do
     handle_event(id, {"stop", saga}, metadata)
   end
 
-  @spec get_saga_with_owner_check(saga_id(), keyword()) :: {:ok, saga_payload} | error
+  @spec get_saga_with_owner_check(saga_id(), metadata()) :: {:ok, saga_payload} | error
   def get_saga_with_owner_check(id, metadata) do
-    with {:call_source, %{type: type, namespace: namespace, service: service}}
-           <- List.keyfind(metadata, :call_source, 0),
+    with %{type: type, namespace: namespace, service: service} <- Map.get(metadata, "call_source", nil),
          {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata),
          true <- match_caller_and_owner?(type, namespace, service, owner) do
       response

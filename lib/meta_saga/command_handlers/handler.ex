@@ -43,7 +43,7 @@ defmodule Meta.Saga.CommandHandlers.Handler do
     Processor.handle_event(saga_id, event, metadata)
   end
 
-  def handle_message(@saga <> "process", request, metadata),
+  def handle_message(@saga <> "process", _request, _metadata),
     do: {:error, "Invalid request. Saga Id is not present."}
 
   def handle_message(@saga <> "process_callback", request, metadata),
