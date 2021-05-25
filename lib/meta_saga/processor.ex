@@ -28,7 +28,7 @@ defmodule Meta.Saga.Processor do
   @type handle_result :: DistributedLib.process_result() | error()
   @type saga_id :: binary()
   @type event :: binary() | {binary(), term()}
-  @type metadata :: keyword()
+  @type metadata :: map()
   @type data :: map() | binary()
   @type uri :: binary()
   @type queue :: tuple()
@@ -54,41 +54,40 @@ defmodule Meta.Saga.Processor do
   #########################################################
 
   @spec handle_event(data(), event(), metadata()) :: handle_result()
-  def handle_event(data, event, metadata \\ [])
+  def handle_event(data, event, metadata \\ %{})
   def handle_event(%{"id" => id} = data, "idle", metadata) do
     metadata_updated =
-      List.keystore(metadata, @event_type, 0, {@event_type, "external"})
+      Map.put(metadata, @event_type, "external")
     args = {data, "idle", metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
   def handle_event(id, event, metadata) do
     metadata_updated =
-      List.keystore(metadata, @event_type, 0, {@event_type, "external"})
+      Map.put(metadata, @event_type, "external")
     args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
   @spec handle_internal_event(saga_id(), event(), metadata()) :: handle_result()
-  def handle_internal_event(id, event, metadata \\ []) do
-    metadata_updated = List.keystore(metadata, @event_type, 0, {@event_type, "internal"})
+  def handle_internal_event(id, event, metadata \\ %{}) do
+    metadata_updated = Map.put(metadata, @event_type, "internal")
     args = {event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
-  @spec stop(saga_id(), keyword()) :: handle_result()
+  @spec stop(saga_id(), metadata()) :: handle_result()
   def stop(id, metadata),
     do: handle_event(id, "stop", metadata)
 
-  @spec stop(saga_id(), keyword(), term()) :: handle_result()
+  @spec stop(saga_id(), metadata(), term()) :: handle_result()
   def stop(id, metadata, saga) do
     handle_event(id, {"stop", saga}, metadata)
   end
 
-  @spec get_saga(saga_id(), keyword()) :: {:ok, saga_payload} | error
-  def get_saga(id, metadata \\ []) do
-    Entities.Saga.core_get(id, metadata)
-  end
+  @spec get_saga(saga_id(), metadata()) :: {:ok, saga_payload} | error
+  def get_saga(id, metadata \\ %{}),
+    do: Entities.Saga.core_get(id, metadata)
 
   #########################################################
   #
@@ -157,7 +156,7 @@ defmodule Meta.Saga.Processor do
     :ok = Cron.add_idle_timeout(id, idle_timeout)
   end
 
-  @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), keyword()) :: :ok
+  @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), metadata()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
     with {:ok, _} <- Entities.Saga.core_put(id, saga_payload, metadata),
          :ok <- Cron.delete_timeout(id),

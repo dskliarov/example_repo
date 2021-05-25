@@ -42,7 +42,7 @@ defmodule Meta.Saga.Aeon do
     @type state :: map()
     @type event :: term()
     @type owner :: binary()
-    @type metadata :: keyword()
+    @type metadata :: map()
     @type result :: {:ok, term()} | {:error, term()}
 
     #########################################################

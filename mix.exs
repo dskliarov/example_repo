@@ -15,7 +15,7 @@ defmodule Meta.Saga.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :distributed_lib, :wizard],
+      extra_applications: [:logger, :distributed_lib, :wizard, :crypto],
       mod: {Meta.Saga.Application, []}
     ]
   end

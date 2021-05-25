@@ -38,15 +38,13 @@ defmodule Meta.Saga.CommandHandlers.Handler do
     Processor.handle_event(id, event, metadata)
   end
 
-  def handle_message(@saga <> "process", request, metadata) do
-    case List.keyfind(metadata, "saga_id", 0) do
-      nil ->
-        {:error, "Invalid request. Saga Id is not present."}
-      {_, id} ->
-        event = event(request)
-        Processor.handle_event(id, event, metadata)
-    end
+  def handle_message(@saga <> "process", request, %{"saga_id" => saga_id} = metadata) do
+    event = event(request)
+    Processor.handle_event(saga_id, event, metadata)
   end
+
+  def handle_message(@saga <> "process", request, metadata),
+    do: {:error, "Invalid request. Saga Id is not present."}
 
   def handle_message(@saga <> "process_callback", request, metadata),
     do: Logger.debug("Process result: #{inspect request}; metadata: #{inspect metadata}")
