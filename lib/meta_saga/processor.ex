@@ -88,7 +88,7 @@ defmodule Meta.Saga.Processor do
 
   @spec get_saga_with_owner_check(saga_id(), metadata()) :: {:ok, saga_payload} | error
   def get_saga_with_owner_check(id, metadata) do
-    with %{type: type, namespace: namespace, service: service} <- Map.get(metadata, "call_source", nil),
+    with %{"type" => type, "namespace" => namespace, "service" => service} <- Map.get(metadata, "call_source", nil),
          {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata),
          true <- match_caller_and_owner?(type, namespace, service, owner) do
       response
@@ -156,10 +156,6 @@ defmodule Meta.Saga.Processor do
   #########################################################
 
   defp match_caller_and_owner?(type, namespace, service, owner) do
-    type      = Atom.to_string(type)
-    namespace = Atom.to_string(namespace)
-    service   = Atom.to_string(service)
-
     case ResourceLocator.parse(owner) do
       {_protocol, {^type, ^namespace, ^service, _command}} -> true
       _rest -> false
