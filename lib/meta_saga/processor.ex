@@ -132,7 +132,7 @@ defmodule Meta.Saga.Processor do
       {:final_error, saga_payload} ->
         Logger.debug("Final error handling: #{inspect saga_payload}; metadata: #{inspect metadata}")
         saga_payload1 = update_saga_error("final_process_timeout", saga_payload)
-        :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
+        dispatch_event(saga_payload1, "stop")
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
         {:ok, "async_submitted"} = Services.Owner.execute(id, state, current_event, owner, metadata)
