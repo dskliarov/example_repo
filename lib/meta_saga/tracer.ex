@@ -103,7 +103,12 @@ defmodule DbgSaga do
 
   defp print_params(:handle_event, [data, event, metadata], indentation, pid) do
     IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
-    print_structure("data", data, indentation, pid)
+    case data do
+      %{"id" => _, "owner" => _, "state" => _} ->
+        print_structure("saga_payload", data, indentation, pid)
+      _other ->
+        print_structure("data", data, indentation, pid)
+    end
     print_structure("event", event, indentation, pid)
     print_structure("metadata", metadata, indentation, pid)
   end
@@ -121,7 +126,7 @@ defmodule DbgSaga do
       [id, {data, saga_idle, metadata}, opts] ->
         print_structure("id", id, indentation, pid)
         print_structure("data", data, indentation, pid)
-        print_structure("saga_idle", saga_idle, indentation, pid)
+        print_structure("saga_payload", saga_idle, indentation, pid)
         print_structure("metadata", metadata, indentation, pid)
         print_structure("options", opts, indentation, pid)
       [id, {event, metadata}, opts] ->
@@ -143,7 +148,7 @@ defmodule DbgSaga do
   defp print_params(:switch_to_idle, [id, saga, idle_timeout, metadata], indentation, pid) do
     IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
     print_structure("id", id, indentation, pid)
-    print_structure("saga", saga, indentation, pid)
+    print_structure("saga_payload", saga, indentation, pid)
     print_structure("idle_timeout", idle_timeout, indentation, pid)
     print_structure("metadata", metadata, indentation, pid)
   end
@@ -163,9 +168,18 @@ defmodule DbgSaga do
     print_structure("event", event, indentation, pid)
   end
 
-  defp print_params(_function, params, indentation, _pid) do
+  defp print_params(_function, params, indentation, pid),
+    do: Enum.each(params, &print_params(&1, indentation, pid))
+
+  defp print_params(%{"id" => _, "owner" => _, "state" => _} = saga_payload, indentation, pid),
+    do: print_structure("saga_payload", saga_payload, indentation, pid)
+
+  defp print_params(%{"call_source" => _} = metadata, indentation, pid),
+    do: print_structure("metadata", metadata, indentation, pid)
+
+  defp print_params(param, indentation, _pid) do
     prefix = prefix(indentation)
-    printable_params = compact(params)
+    printable_params = compact(param)
     PrettyPrint.inspect(printable_params, width: 80, prefix: prefix)
   end
 
@@ -259,7 +273,7 @@ defmodule DbgSaga do
     IO.puts("#{prefix}#{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect object}#{reset()}")
   end
 
-  defp print_structure(label, %{} = object, indentation, pid) when label in ["saga", "metadata"] do
+  defp print_structure(label, %{} = object, indentation, pid) when label in ["saga_payload", "metadata"] do
     storage_id = "#{label}_#{inspect pid}"
     stored_object = Process.get(storage_id, %{})
     case DataUtils.maps_diff(stored_object, object) do
