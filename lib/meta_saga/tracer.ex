@@ -350,6 +350,8 @@ defmodule DbgSaga do
         queue_list = :queue.to_list(events_queue)
         IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!! The process queue is building up#{reset()}")
         IO.puts("#{IO.ANSI.blue()}Tasks queue: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect queue_list}#{reset()}")
+      true ->
+        :ok
     end
   end
 
