@@ -214,25 +214,27 @@ defmodule DbgSaga do
   #########################################################
 
   defp print_result(:add_schedule, [id, _timestamp, _task] = original_params, result, indentation, pid) do
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: id")
     print_result(nil, original_params, result, indentation, pid)
     print_current_schedule(id, indentation)
   end
 
   defp print_result(:delete_schedule, [ids] = original_params, result, indentation, pid) do
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: [ids]")
     print_result(nil, original_params, result, indentation, pid)
     Enum.each(ids, &print_current_schedule(&1, indentation))
   end
 
   defp print_result(_function, _original_params,
     {command, %{"id" => _, "owner" => _, "state" => _} = saga_payload}, indentation, pid) do
-    prefix = prefix(indentation, "result:")
-    print_structure("command", command, pid)
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {command, saga_payload}")
+    print_structure("command", command, indentation, pid)
     print_structure("saga_payload", saga_payload, indentation, pid)
   end
 
   defp print_result(_function, _original_params,
     %{"id" => _, "owner" => _, "state" => _} = saga_payload, indentation, pid) do
-    prefix = prefix(indentation, "result:")
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: saga_payload")
     print_structure("saga_payload", saga_payload, indentation, pid)
   end
 
