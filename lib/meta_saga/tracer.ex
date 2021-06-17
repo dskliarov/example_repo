@@ -104,7 +104,7 @@ defmodule DbgSaga do
   defp print_params(:handle_event, [data, event, metadata], indentation, pid) do
     IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
     case data do
-      %{"id" => _, "owner" => _, "state" => _} ->
+      %{"events_queue" => _, "owner" => _, "state" => _} ->
         print_structure("saga_payload", data, indentation, pid)
       _other ->
         print_structure("data", data, indentation, pid)
@@ -192,10 +192,12 @@ defmodule DbgSaga do
     print_structure("event", event, indentation, pid)
   end
 
-  defp print_params(_function, params, indentation, pid),
-    do: Enum.each(params, &print_params(&1, indentation, pid))
+  defp print_params(_function, params, indentation, pid) do
+    IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
+    Enum.each(params, &print_params(&1, indentation, pid))
+  end
 
-  defp print_params(%{"id" => _, "owner" => _, "state" => _} = saga_payload, indentation, pid),
+  defp print_params(%{"events_queue" => _, "owner" => _, "state" => _} = saga_payload, indentation, pid),
     do: print_structure("saga_payload", saga_payload, indentation, pid)
 
   defp print_params(%{"call_source" => _} = metadata, indentation, pid),
@@ -226,14 +228,22 @@ defmodule DbgSaga do
   end
 
   defp print_result(_function, _original_params,
-    {command, %{"id" => _, "owner" => _, "state" => _} = saga_payload}, indentation, pid) do
+    {command, %{"events_queue" => _, "owner" => _, "state" => _} = saga_payload}, indentation, pid) do
     IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {command, saga_payload}")
     print_structure("command", command, indentation, pid)
     print_structure("saga_payload", saga_payload, indentation, pid)
   end
 
   defp print_result(_function, _original_params,
-    %{"id" => _, "owner" => _, "state" => _} = saga_payload, indentation, pid) do
+    {command, %{"owner" => _, "state" => _} = saga_payload, timeout}, indentation, pid) do
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {command, saga_payload}")
+    print_structure("command", command, indentation, pid)
+    print_structure("saga_payload", saga_payload, indentation, pid)
+    print_structure("idle_timeout", timeout, indentation, pid)
+  end
+
+  defp print_result(_function, _original_params,
+    %{"owner" => _, "state" => _} = saga_payload, indentation, pid) do
     IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: saga_payload")
     print_structure("saga_payload", saga_payload, indentation, pid)
   end
@@ -324,6 +334,7 @@ defmodule DbgSaga do
         print_diff_structure(label, stored_object, object, indentation, pid)
         Process.put(storage_id, object)
     end
+    print_saga_warning(object, indentation, pid)
   end
 
   defp print_structure(label, object, indentation, _pid) do
@@ -332,6 +343,17 @@ defmodule DbgSaga do
     prefix = prefix(indentation, label)
     PrettyPrint.inspect(printable_object, width: 80, prefix: prefix)
   end
+
+  defp print_saga_warning(%{"events_queue" => events_queue}, indentation, _pid) do
+    cond do
+      :queue.len(events_queue) > 0 ->
+        queue_list = :queue.to_list(events_queue)
+        IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!! The process queue is building up#{reset()}")
+        IO.puts("#{IO.ANSI.blue()}Tasks queue: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect queue_list}#{reset()}")
+    end
+  end
+
+  defp print_saga_warning(_not_saga, _indentation, _pid), do: :ok
 
   #########################################################
   #   print_diff_structure
