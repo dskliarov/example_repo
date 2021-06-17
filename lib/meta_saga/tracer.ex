@@ -215,16 +215,14 @@ defmodule DbgSaga do
   #
   #########################################################
 
-  defp print_result(:add_schedule, [id, _timestamp, _task] = original_params, result, indentation, pid) do
-    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: id")
-    print_result(nil, original_params, result, indentation, pid)
+  defp print_result(:add_timeout, [_task, id, _timeout], result, indentation, pid) do
+    print_structure("result: ", result, indentation, pid)
     print_current_schedule(id, indentation)
   end
 
-  defp print_result(:delete_schedule, [ids] = original_params, result, indentation, pid) do
-    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: [ids]")
-    print_result(nil, original_params, result, indentation, pid)
-    Enum.each(ids, &print_current_schedule(&1, indentation))
+  defp print_result(:delete_timeout, [id], result, indentation, pid) do
+    print_structure("result: ", result, indentation, pid)
+    print_current_schedule(id, indentation)
   end
 
   defp print_result(_function, _original_params,
