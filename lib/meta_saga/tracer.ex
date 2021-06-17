@@ -129,12 +129,27 @@ defmodule DbgSaga do
         print_structure("event", event, indentation, pid)
         print_structure("metadata", metadata, indentation, pid)
         print_structure("options", opts, indentation, pid)
+      [id, {{command, saga_payload}, metadata}, opts] ->
+        print_structure("id", id, indentation, pid)
+        print_structure("command", command, indentation, pid)
+        print_structure("saga_payload", saga_payload, indentation, pid)
+        print_structure("metadata", metadata, indentation, pid)
+        print_structure("options", opts, indentation, pid)
       [id, {event, metadata}, opts] ->
         print_structure("id", id, indentation, pid)
         print_structure("event", event, indentation, pid)
         print_structure("metadata", metadata, indentation, pid)
         print_structure("options", opts, indentation, pid)
     end
+  end
+
+  defp print_params(:process_saga, [id, saga_payload, {command, new_saga_payload}, metadata], indentation, pid) do
+    IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
+    print_structure("id", id, indentation, pid)
+    print_structure("command", command, indentation, pid)
+    print_structure("saga_payload", saga_payload, indentation, pid)
+    print_structure("metadata", metadata, indentation, pid)
+    print_diff_structure("new_saga_payload", new_saga_payload, saga_payload, indentation, pid)
   end
 
   defp print_params(:process_saga, [id, saga_payload, event, metadata], indentation, pid) do
@@ -323,6 +338,16 @@ defmodule DbgSaga do
     IO.puts("#{indentation(indentation)}#{IO.ANSI.green()}+ %{#{field}: #{inspect value}}#{reset()}")
   end
 
+  defp print_diff_item(%{op: :replace,
+                         path: [{field, :map}, {field1, :map}],
+                         original_value: original_value,
+                         value: value}, indentation, _pid) do
+    field_to_remove = "%{#{field1}: #{inspect original_value}}"
+    field_to_add = "%{#{field1}: #{inspect value}}"
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}- %{#{field}: #{field_to_remove}}#{reset()}")
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.green()}+ %{#{field}: #{field_to_add}}#{reset()}")
+  end
+
   defp print_diff_item(%{op: :move,
                          from: [{field_from, :map}],
                          path: [{field_to, :map}],
@@ -335,6 +360,21 @@ defmodule DbgSaga do
                          original_value: value,
                          path: [{field, :map}]}, indentation, _pid) do
     IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}- %{#{field}: #{inspect value}}#{reset()}")
+  end
+
+  defp print_diff_item(%{op: :remove,
+                         original_value: value,
+                         path: [{field, :map}, {field1, :map}]}, indentation, _pid) do
+    field_to_remove = "%{#{field1}: #{inspect value}}"
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}- %{#{field}: #{field_to_remove}}#{reset()}")
+  end
+
+  defp print_diff_item(%{op: :remove,
+                         original_value: value,
+                         path: [{field, :map}, {field1, :map}, {field2, :map}]}, indentation, _pid) do
+    field_to_remove = "%{#{field2}: #{inspect value}}"
+    field_to_remove1 = "%{#{field1}: #{field_to_remove}}"
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}- %{#{field}: #{field_to_remove1}}#{reset()}")
   end
 
   defp print_diff_item(%{op: :add,
