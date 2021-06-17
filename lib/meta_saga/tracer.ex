@@ -97,7 +97,7 @@ defmodule DbgSaga do
   defp print_params(:handle_message, [uri, payload, metadata], indentation, pid) do
     IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
     print_structure("uri", uri, indentation, pid)
-    print_structure("payload", payload, indentation, pid)
+    print_structure("saga_payload", payload, indentation, pid)
     print_structure("metadata", metadata, indentation, pid)
   end
 
@@ -123,10 +123,10 @@ defmodule DbgSaga do
   defp print_params(:handle, params, indentation, pid) do
     IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
     case params do
-      [id, {data, saga_idle, metadata}, opts] ->
+      [id, {saga_payload, event, metadata}, opts] ->
         print_structure("id", id, indentation, pid)
-        print_structure("data", data, indentation, pid)
-        print_structure("saga_payload", saga_idle, indentation, pid)
+        print_structure("saga_payload", saga_payload, indentation, pid)
+        print_structure("event", event, indentation, pid)
         print_structure("metadata", metadata, indentation, pid)
         print_structure("options", opts, indentation, pid)
       [id, {event, metadata}, opts] ->
