@@ -136,12 +136,12 @@ defmodule Meta.Saga.Processor do
       {:execute_process, {saga_payload1, current_event, process_timeout}} ->
         %{"state" => state} = saga_payload1
         {:ok, "async_submitted"} = Services.Owner.execute(id, state, current_event, owner, metadata)
-        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
+        :ok = store_saga_with_verification(id, saga_payload1, metadata, 3)
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
         switch_to_idle(id, saga_payload1, idle_timeout, metadata)
       {:queue, saga_payload1} ->
-        {:ok, _} = Entities.Saga.core_put(id, saga_payload1, metadata)
+        :ok = store_saga_with_verification(id, saga_payload1, metadata, 3)
       {:stop, saga_payload1} ->
         :ok = finalize_saga(id, saga_payload1, owner, event, metadata)
       {:ignore, _state} ->
@@ -172,13 +172,13 @@ defmodule Meta.Saga.Processor do
   end
 
   defp switch_to_idle(id, saga, idle_timeout, metadata) do
-    {:ok, _} = Entities.Saga.core_put(id, saga, metadata)
+    :ok = store_saga_with_verification(id, saga, metadata, 3)
     :ok = Cron.add_idle_timeout(id, idle_timeout)
   end
 
   @spec finalize_saga(saga_id(), saga_payload(), uri(), event(), metadata()) :: :ok
   defp finalize_saga(id, %{"state" => state} = saga_payload, owner, "stop", metadata) do
-    with {:ok, _} <- Entities.Saga.core_put(id, saga_payload, metadata),
+    with :ok <- store_saga_with_verification(id, saga_payload, metadata, 3),
          :ok <- Cron.delete_timeout(id),
          {:ok, "async_submitted"} <- Services.Owner.execute(id, state, "stop", owner, metadata),
       do: :ok
@@ -225,6 +225,7 @@ defmodule Meta.Saga.Processor do
     case :queue.out(queue) do
       {:empty, _queue1} ->
         idle_timeout = idle_timeout(saga_payload)
+        saga_payload = %{saga_payload|"process" => ""}
         {:idle, saga_payload, idle_timeout}
       {{:value, event}, queue1} ->
         retry_counter = retry_counter(saga_payload)
@@ -256,6 +257,7 @@ defmodule Meta.Saga.Processor do
       "process" => "",
       "error" => "",
       "error_history" => [],
+      "timestamp" => 0,
       "events_queue" => :queue.new()
     }
   end
@@ -284,5 +286,26 @@ defmodule Meta.Saga.Processor do
     saga_payload
     |> get_options()
     |> Map.get(setting, default)
+  end
+
+  defp store_saga_with_verification(_id, _saga, _metadata, 0),
+    do: {:error, "Error while store saga"}
+
+  defp store_saga_with_verification(id, saga, metadata, retry_counter) do
+    timestamp = :os.system_time(:millisecond)
+    saga_updated = %{saga|"timestamp" => timestamp}
+    with {:ok, _} <- Entities.Saga.core_put(id, saga_updated, metadata),
+         {:ok, {_id, %{"timestamp" => ^timestamp}}} <- Entities.Saga.core_get(id, metadata) do
+      :ok
+      else
+        {:ok, {_id, %{"timestamp" => actual_timestamp}}} ->
+          Logger.debug("Verification of stored saga with id #{id} failed. Expected timestamp is #{timestamp},
+          actual timestamp is #{actual_timestamp}")
+          store_saga_with_verification(id, saga, metadata, retry_counter - 1)
+        error ->
+          Logger.error("Error while storing saga with id #{id}; Error: #{inspect error}")
+          :timer.sleep(1000)
+          store_saga_with_verification(id, saga, metadata, retry_counter - 1)
+    end
   end
 end

@@ -342,12 +342,17 @@ defmodule DbgSaga do
     PrettyPrint.inspect(printable_object, width: 80, prefix: prefix)
   end
 
-  defp print_saga_warning(%{"events_queue" => events_queue}, indentation, _pid) do
+  defp print_saga_warning(%{"events_queue" => events_queue, "process" => process_event}, indentation, _pid) do
     cond do
       :queue.len(events_queue) > 0 ->
         queue_list = :queue.to_list(events_queue)
+        line("#{IO.ANSI.red()}", "*", 0)
+        IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!!#{reset()}")
         IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!! The process queue is building up#{reset()}")
+        IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!!#{reset()}")
+        line("#{IO.ANSI.red()}", "*", 0)
         IO.puts("#{IO.ANSI.blue()}Tasks queue: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect queue_list}#{reset()}")
+        IO.puts("#{IO.ANSI.blue()}Currently processing: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect process_event}#{reset()}")
       true ->
         :ok
     end
