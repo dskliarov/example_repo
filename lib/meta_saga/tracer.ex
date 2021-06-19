@@ -310,6 +310,12 @@ defmodule DbgSaga do
     header("#{message}", style, "*", indentation)
   end
 
+  defp print_call(module, :handle_internal_event, params, indentation, _pid) do
+    style = "#{IO.ANSI.cyan()}"
+    message = trace_info(module, "handle_internal_event", params)
+    header("#{message}", style, "*", indentation)
+  end
+
   defp print_call(module, function, params, indentation, _pid) do
     style = "#{IO.ANSI.blue()}"
     message = trace_info(module, function, params)
@@ -361,6 +367,12 @@ defmodule DbgSaga do
         Process.put(storage_id, object)
     end
     print_saga_warning(object, indentation, pid)
+  end
+
+  defp print_structure(label, object, indentation, _pid) when object in [:idle_timeout, :process_timeout] do
+    style = "#{IO.ANSI.red()}"
+    message = "#{IO.ANSI.red()}#{IO.ANSI.inverse()}#{label}: #{inspect object}"
+    header("#{message}", style, "*", indentation)
   end
 
   defp print_structure(label, object, indentation, _pid) do
