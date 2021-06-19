@@ -143,7 +143,7 @@ defmodule DbgSaga do
     end
   end
 
-  defp print_params(:process_saga, [id, {id, saga_payload}, {command, new_saga_payload}, metadata], indentation, pid) do
+  defp print_params(:process_saga, [id, {:ok, {id, saga_payload}}, {command, new_saga_payload}, metadata], indentation, pid) do
     IO.puts("#{indentation(indentation, :call)}#{IO.ANSI.blue}params:#{reset()}")
     print_structure("id", id, indentation, pid)
     print_structure("command", command, indentation, pid)
@@ -226,6 +226,28 @@ defmodule DbgSaga do
   end
 
   defp print_result(_function, _original_params,
+    {:ok, {id, %{"events_queue" => _, "owner" => _, "state" => _} = saga_payload}}, indentation, pid) do
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {:ok, {id, saga_payload}}")
+    print_structure("id", id, indentation, pid)
+    print_structure("saga_payload", saga_payload, indentation, pid)
+  end
+
+  defp print_result(_function, _original_params,
+    {:execute_process, {%{"events_queue" => _, "owner" => _, "state" => _} = saga_payload, event, timeout}}, indentation, pid) do
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {:execute_process, {saga_payload, event, timeout}}")
+    print_structure("saga_payload", saga_payload, indentation, pid)
+    print_structure("event", event, indentation, pid)
+    print_structure("timeout", timeout, indentation, pid)
+  end
+
+  defp print_result(_function, _original_params,
+    {:ok, [{id, %{"events_queue" => _, "owner" => _, "state" => _} = saga_payload}]}, indentation, pid) do
+    IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {:ok, [{id, saga_payload}]}")
+    print_structure("id", id, indentation, pid)
+    print_structure("saga_payload", saga_payload, indentation, pid)
+  end
+
+  defp print_result(_function, _original_params,
     {command, %{"events_queue" => _, "owner" => _, "state" => _} = saga_payload}, indentation, pid) do
     IO.puts("#{indentation(indentation)}#{IO.ANSI.blue}result: {command, saga_payload}")
     print_structure("command", command, indentation, pid)
@@ -279,6 +301,12 @@ defmodule DbgSaga do
   defp print_call(module, :handle_message, params, indentation, _pid) do
     style = "#{IO.ANSI.green()}"
     message = trace_info(module, "handle_message", params)
+    header("#{message}", style, "*", indentation)
+  end
+
+  defp print_call(module, :handle, params, indentation, _pid) do
+    style = "#{IO.ANSI.magenta()}"
+    message = trace_info(module, "handle", params)
     header("#{message}", style, "*", indentation)
   end
 
