@@ -372,7 +372,7 @@ defmodule DbgSaga do
   defp print_structure(label, object, indentation, _pid) when object in [:idle_timeout, :process_timeout] do
     style = "#{IO.ANSI.red()}"
     message = "#{IO.ANSI.red()}#{IO.ANSI.inverse()}#{label}: #{inspect object}"
-    header("#{message}", style, "*", indentation)
+    header("#{message}", style, "-", indentation)
   end
 
   defp print_structure(label, object, indentation, _pid) do
