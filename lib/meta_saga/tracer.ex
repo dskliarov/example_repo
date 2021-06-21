@@ -327,7 +327,7 @@ defmodule DbgSaga do
 
   defp header(message, style, filler, indentation) do
     line(style, filler, indentation)
-    IO.puts("#{indentation(indentation)}#{message}")
+    IO.puts("#{indentation(indentation)}#{message}#{reset()}")
     line(style, filler, indentation)
   end
 
