@@ -1,13 +1,14 @@
 defmodule DbgSaga do
+  @moduledoc false
+
+  alias DistributedLib.Cron.Scheduler
   alias Meta.Saga.CommandHandlers.Handler
   alias Meta.Saga.Cron
   alias Meta.Saga.Processor
-  alias DistributedLib.Cron.Scheduler
-
 
   @value_max_length 15
 
-  def trace() do
+  def trace do
     modules = [Handler, Cron, Processor]
     :dbg.stop_clear()
     :dbg.tracer(:process, {&tracer_printer(&1, &2, -1), 0})
@@ -383,18 +384,17 @@ defmodule DbgSaga do
   end
 
   defp print_saga_warning(%{"events_queue" => events_queue, "process" => process_event}, indentation, _pid) do
-    cond do
-      :queue.len(events_queue) > 0 ->
-        queue_list = :queue.to_list(events_queue)
-        line("#{IO.ANSI.red()}", "*", 0)
-        IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!!#{reset()}")
-        IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!! The process queue is building up#{reset()}")
-        IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!!#{reset()}")
-        line("#{IO.ANSI.red()}", "*", 0)
-        IO.puts("#{IO.ANSI.blue()}Tasks queue: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect queue_list}#{reset()}")
-        IO.puts("#{IO.ANSI.blue()}Currently processing: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect process_event}#{reset()}")
-      true ->
-        :ok
+    if :queue.len(events_queue) > 0 do
+      queue_list = :queue.to_list(events_queue)
+      line("#{IO.ANSI.red()}", "*", 0)
+      IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!!#{reset()}")
+      IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!! The process queue is building up#{reset()}")
+      IO.puts("#{indentation(indentation)}#{IO.ANSI.red()}WARNING!!!!#{reset()}")
+      line("#{IO.ANSI.red()}", "*", 0)
+      IO.puts("#{IO.ANSI.blue()}Tasks queue: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect queue_list}#{reset()}")
+      IO.puts("#{IO.ANSI.blue()}Currently processing: #{IO.ANSI.red()}#{IO.ANSI.inverse()}#{inspect process_event}#{reset()}")
+    else
+      :ok
     end
   end
 
