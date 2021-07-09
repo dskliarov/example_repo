@@ -89,7 +89,7 @@ defmodule Meta.Saga.Processor do
   @spec get_saga_with_owner_check(saga_id(), metadata()) :: {:ok, saga_payload} | error
   def get_saga_with_owner_check(id, metadata) do
     with %{"type" => type, "namespace" => namespace, "service" => service} <- Map.get(metadata, "call_source", nil),
-         {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_get(id, metadata),
+         {:ok, {_id, %{"owner" => owner}}} = response <- Entities.Saga.core_read(id, metadata),
          true <- match_caller_and_owner?(type, namespace, service, owner) do
       response
     else
@@ -116,7 +116,7 @@ defmodule Meta.Saga.Processor do
 
   @impl MessageHandler
   def handle(id, {event, metadata}, _opts) do
-    with {:ok, saga} <- Entities.Saga.core_get(id, metadata),
+    with {:ok, saga} <- Entities.Saga.core_read(id, metadata),
       do: process_saga(id, saga, event, metadata)
   end
 
@@ -294,8 +294,8 @@ defmodule Meta.Saga.Processor do
   defp store_saga_with_verification(id, saga, metadata, retry_counter) do
     timestamp = :os.system_time(:millisecond)
     saga_updated = %{saga|"timestamp" => timestamp}
-    with {:ok, _} <- Entities.Saga.core_put(id, saga_updated, metadata),
-         {:ok, {_id, %{"timestamp" => ^timestamp}}} <- Entities.Saga.core_get(id, metadata) do
+    with :ok <- Entities.Saga.core_write(id, saga_updated, metadata),
+         {:ok, {_id, %{"timestamp" => ^timestamp}}} <- Entities.Saga.core_read(id, metadata) do
       :ok
       else
         {:ok, {_id, %{"timestamp" => actual_timestamp}}} ->

@@ -1,7 +1,7 @@
 import Config
 
-config :saga_v2,
-  conn_opts: [{'127.0.0.1', 2379}]
+config :etcd_client,
+       endpoints: "172.20.0.4:2379"
 
 config :wizard,
   transports: [
@@ -10,8 +10,8 @@ config :wizard,
   ]
 
 config :grpc_transport,
-  listen: {'0.0.0.0', 9008}
+  listen: {'0.0.0.0', 9000}
 
-config :rabbit_transport, :conn_opts, {'127.0.0.1', 5672}
+config :rabbit_transport, :conn_opts, {'172.20.0.2', 5672}
 
 
