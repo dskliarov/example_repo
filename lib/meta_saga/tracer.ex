@@ -1,15 +1,14 @@
 defmodule DbgSaga do
   @moduledoc false
 
+  alias DistributedLib.Cron.Scheduler
   alias Meta.Saga.CommandHandlers.Handler
   alias Meta.Saga.Cron
   alias Meta.Saga.Processor
-  alias DistributedLib.Cron.Scheduler
-
 
   @value_max_length 15
 
-  def trace() do
+  def trace do
     modules = [Handler, Cron, Processor]
     :dbg.stop_clear()
     :dbg.tracer(:process, {&tracer_printer(&1, &2, -1), 0})
