@@ -44,9 +44,11 @@ defmodule Meta.Saga.Processor do
   {:queue, saga_payload()} |
   {:execute_process, execute_message()} |
   {:idle, saga_payload(), timeout()} |
+  {:continue, saga_payload(), timeout()} |
   {:final_error, saga_payload()}
 
   @type request :: map()
+  @type current_saga :: map()
 
   #########################################################
   #
@@ -56,10 +58,10 @@ defmodule Meta.Saga.Processor do
 
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ %{})
-  def handle_event(%{"id" => id} = data, "idle", metadata) do
+  def handle_event(%{"id" => id} = data, event, metadata) when event in ["idle", "continue"] do
     metadata_updated =
       Map.put(metadata, @event_type, "external")
-    args = {data, "idle", metadata_updated}
+    args = {data, event, metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
@@ -115,6 +117,14 @@ defmodule Meta.Saga.Processor do
   end
 
   @impl MessageHandler
+  def handle(id, {data, "continue", metadata}, _opts) do
+    with {:ok, current_saga} <- Entities.Saga.core_read(id, metadata) do
+      new_saga = payload(data, current_saga)
+      process_saga(id, new_saga, "continue", metadata)
+    end
+  end
+
+  @impl MessageHandler
   def handle(id, {event, metadata}, _opts) do
     with {:ok, saga} <- Entities.Saga.core_read(id, metadata),
       do: process_saga(id, saga, event, metadata)
@@ -140,6 +150,9 @@ defmodule Meta.Saga.Processor do
         :ok = Cron.add_execute_timeout(id, process_timeout)
       {:idle, saga_payload1, idle_timeout} ->
         switch_to_idle(id, saga_payload1, idle_timeout, metadata)
+      {:continue, saga_payload1, process_timeout} ->
+        :ok = store_saga_with_verification(id, saga_payload1, metadata, 3)
+        :ok = Cron.add_execute_timeout(id, process_timeout)
       {:queue, saga_payload1} ->
         :ok = store_saga_with_verification(id, saga_payload1, metadata, 3)
       {:stop, saga_payload1} ->
@@ -237,6 +250,11 @@ defmodule Meta.Saga.Processor do
     end
   end
 
+  defp dispatch_event(saga_payload, "continue") do
+    process_timeout = process_timeout(saga_payload)
+    {:continue, saga_payload, process_timeout}
+  end
+
   defp dispatch_event(%{"process" => ""} = saga_payload, event) do
     retry_counter = retry_counter(saga_payload)
     process_timeout = process_timeout(saga_payload)
@@ -247,6 +265,21 @@ defmodule Meta.Saga.Processor do
   defp dispatch_event(%{"events_queue" => queue} = saga_payload, event) do
     saga_payload = %{saga_payload|"events_queue" => :queue.in(event, queue)}
     {:queue, saga_payload}
+  end
+
+  @spec payload(request(), current_saga()) :: saga_payload()
+  defp payload(%{"state" => state, "owner" => owner},
+    %{"process" => process, "error" => error, "error_history" => error_history,
+      "timestamp" => timestamp, "events_queue" => events_queue}) do
+    %{
+      "state" => state,
+      "owner" => owner,
+      "process" => process,
+      "error" => error,
+      "error_history" => error_history,
+      "timestamp" => timestamp,
+      "events_queue" => events_queue
+    }
   end
 
   @spec payload(request()) :: saga_payload()

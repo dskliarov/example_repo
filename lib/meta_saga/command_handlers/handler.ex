@@ -20,6 +20,9 @@ defmodule Meta.Saga.CommandHandlers.Handler do
   def handle_message(@saga <> "get", %{"id" => id}, metadata),
     do: Processor.get_saga_with_owner_check(id, metadata)
 
+  def handle_message(@saga <> "continue", request, metadata),
+    do: Processor.handle_event(request, "continue", metadata)
+
   def handle_message(@saga <> "stop", %{"id" => id,
                                         "state" => state}, metadata),
     do: Processor.stop(id, metadata, state)
