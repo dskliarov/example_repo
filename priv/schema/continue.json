@@ -1,0 +1,41 @@
+{
+    "title": "Continue saga. Update saga and restart process timer",
+    "type": "object",
+    "description": "Command: continue saga",
+    "required": [
+        "id",
+        "state"
+    ],
+    "properties": {
+        "id": {
+            "type":  "string",
+            "description": "saga id"
+        },
+        "state": {
+            "type": "object",
+            "description": "saga state"
+            "required": []
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "description": "saga options"
+                    "required": []
+                    "properties": {
+                        "idle_timeout": {
+                            "type": "number",
+                            "description": "duration of the idle timeout in milliseconds"
+                        },
+                        "process_timeout": {
+                            "type": "number",
+                            "description": "duration of the process timeout in milliseconds"
+                        },
+                        "retry_counter": {
+                            "type": "number",
+                            "description": "amount of process retries before final fault"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
