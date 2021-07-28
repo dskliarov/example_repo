@@ -12,7 +12,6 @@ defmodule Meta.Saga.Aeon do
 
     command("idle", Handler, input_schema: {:json, "idle.json"})
     command("get", Handler, input_schema: {:json, "get.json"})
-    command("continue", Handler, input_schema: {:json, "get.json"})
     command("stop", Handler)
     command("process", Handler)
     command("process_callback", Handler)
