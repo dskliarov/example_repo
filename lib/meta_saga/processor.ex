@@ -109,9 +109,9 @@ defmodule Meta.Saga.Processor do
   #########################################################
 
   @impl MessageHandler
-  def handle(id, {data, "idle", metadata}, _opts) do
+  def handle(id, {data, event, metadata}, _opts) when event in ["idle", "continue"] do
     saga = payload(data)
-    process_saga(id, saga, "idle", metadata)
+    process_saga(id, saga, event, metadata)
   end
 
   @impl MessageHandler
@@ -235,6 +235,13 @@ defmodule Meta.Saga.Processor do
                   "events_queue" => queue1}
         {:execute_process, {saga_payload, event, process_timeout}}
     end
+  end
+
+  defp dispatch_event(saga_payload, "continue") do
+    retry_counter = retry_counter(saga_payload)
+    process_timeout = process_timeout(saga_payload)
+    saga_payload = %{saga_payload|"process" => {"continue", retry_counter}}
+    {:execute_process, {saga_payload, "continue", process_timeout}}
   end
 
   defp dispatch_event(%{"process" => ""} = saga_payload, event) do
