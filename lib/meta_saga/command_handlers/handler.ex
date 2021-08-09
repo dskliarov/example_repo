@@ -29,7 +29,7 @@ defmodule Meta.Saga.CommandHandlers.Handler do
 
   def handle_message(@saga <> "continue", %{"id" => id} = request, metadata) do
     event = event(request)
-    Processor.handle_event(id, event, metadata)
+    Processor.handle_event(id, "continue", metadata)
   end
 
   def handle_message(@saga <> "process", %{"id" => id,
