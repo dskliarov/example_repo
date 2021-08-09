@@ -44,11 +44,9 @@ defmodule Meta.Saga.Processor do
   {:queue, saga_payload()} |
   {:execute_process, execute_message()} |
   {:idle, saga_payload(), timeout()} |
-  {:continue, saga_payload(), timeout()} |
   {:final_error, saga_payload()}
 
   @type request :: map()
-  @type current_saga :: map()
 
   #########################################################
   #
@@ -58,10 +56,10 @@ defmodule Meta.Saga.Processor do
 
   @spec handle_event(data(), event(), metadata()) :: handle_result()
   def handle_event(data, event, metadata \\ %{})
-  def handle_event(%{"id" => id} = data, event, metadata) when event in ["idle", "continue"] do
+  def handle_event(%{"id" => id} = data, "idle", metadata) do
     metadata_updated =
       Map.put(metadata, @event_type, "external")
-    args = {data, event, metadata_updated}
+    args = {data, "idle", metadata_updated}
     DistributedLib.process(id, args, __MODULE__)
   end
 
